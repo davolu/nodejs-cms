@@ -21,6 +21,8 @@ export interface WidgetDef {
   kind: string      // render kind
   defaults: Record<string, any>
   fields: Field[]
+  app?: boolean     // true = installable third-party "app" (shown in the App Store)
+  appDescription?: string
 }
 
 const txt = (key: string, label: string, placeholder = ''): Field => ({ key, label, type: 'text', placeholder })
@@ -171,9 +173,49 @@ export const WIDGETS: WidgetDef[] = [
   { type: 'social', label: 'Social Icons', category: 'Social', icon: 'Share2', kind: 'social',
     defaults: { items: [{ platform: 'twitter', href: '#' }, { platform: 'facebook', href: '#' }, { platform: 'instagram', href: '#' }, { platform: 'linkedin', href: '#' }] },
     fields: [{ key: 'items', label: 'Links', type: 'items', itemFields: [{ key: 'platform', label: 'Platform', type: 'select', options: ['twitter', 'facebook', 'instagram', 'linkedin', 'youtube', 'github'] }, url('href', 'Link')] }] },
+
+  // ── Apps (installable third-party integrations) ──
+  { type: 'app_youtube', label: 'YouTube', category: 'Apps', icon: 'Youtube', kind: 'app_youtube', app: true,
+    appDescription: 'Embed a YouTube video or playlist.',
+    defaults: { url: '', heading: '' }, fields: [txt('heading', 'Heading (optional)'), url('url', 'Video / playlist URL')] },
+  { type: 'app_spotify', label: 'Spotify', category: 'Apps', icon: 'Music', kind: 'app_spotify', app: true,
+    appDescription: 'Embed a Spotify track, album, or playlist.',
+    defaults: { url: '' }, fields: [url('url', 'Spotify URL')] },
+  { type: 'app_soundcloud', label: 'SoundCloud', category: 'Apps', icon: 'Music2', kind: 'app_soundcloud', app: true,
+    appDescription: 'Embed a SoundCloud track or playlist.',
+    defaults: { url: '' }, fields: [url('url', 'SoundCloud track URL')] },
+  { type: 'app_instagram', label: 'Instagram', category: 'Apps', icon: 'Instagram', kind: 'app_instagram', app: true,
+    appDescription: 'Embed an Instagram post or reel.',
+    defaults: { url: '' }, fields: [url('url', 'Post / reel URL')] },
+  { type: 'app_twitter', label: 'X (Twitter)', category: 'Apps', icon: 'Twitter', kind: 'app_twitter', app: true,
+    appDescription: 'Embed a tweet / X post.',
+    defaults: { url: '' }, fields: [url('url', 'Tweet / post URL')] },
+  { type: 'app_tiktok', label: 'TikTok', category: 'Apps', icon: 'Video', kind: 'app_tiktok', app: true,
+    appDescription: 'Embed a TikTok video.',
+    defaults: { url: '' }, fields: [url('url', 'TikTok video URL')] },
+  { type: 'app_github', label: 'GitHub Repo', category: 'Apps', icon: 'Github', kind: 'app_github', app: true,
+    appDescription: 'Show a GitHub repository card (stars, language, description).',
+    defaults: { repo: '' }, fields: [txt('repo', 'Repository', 'owner/name')] },
+  { type: 'app_calcom', label: 'Cal.com', category: 'Apps', icon: 'CalendarClock', kind: 'app_calcom', app: true,
+    appDescription: 'Embed a Cal.com scheduling page.',
+    defaults: { link: '', heading: 'Book a time' }, fields: [txt('heading', 'Heading (optional)'), txt('link', 'Cal.com link', 'username/30min')] },
+  { type: 'app_typeform', label: 'Typeform', category: 'Apps', icon: 'FileCode', kind: 'app_typeform', app: true,
+    appDescription: 'Embed a Typeform form or survey.',
+    defaults: { id: '' }, fields: [txt('id', 'Form ID or URL')] },
+  { type: 'app_discord', label: 'Discord', category: 'Apps', icon: 'MessageSquare', kind: 'app_discord', app: true,
+    appDescription: 'Embed a Discord server widget (enable Server Widget in Discord).',
+    defaults: { serverId: '' }, fields: [txt('serverId', 'Server ID')] },
+  { type: 'app_bmc', label: 'Buy Me a Coffee', category: 'Apps', icon: 'Coffee', kind: 'app_bmc', app: true,
+    appDescription: 'A Buy Me a Coffee support button.',
+    defaults: { username: '', label: 'Buy me a coffee' }, fields: [txt('username', 'Username'), txt('label', 'Button label')] },
+  { type: 'app_whatsapp', label: 'WhatsApp Chat', category: 'Apps', icon: 'MessageCircle', kind: 'app_whatsapp', app: true,
+    appDescription: 'A floating WhatsApp click-to-chat button.',
+    defaults: { phone: '', message: 'Hi! I have a question.' }, fields: [txt('phone', 'Phone (with country code)', '15551234567'), txt('message', 'Prefilled message')] },
 ]
 
 export const WIDGET_MAP: Record<string, WidgetDef> = Object.fromEntries(WIDGETS.map((w) => [w.type, w]))
+export const APPS: WidgetDef[] = WIDGETS.filter((w) => w.app)
+export function isApp(type: string): boolean { return !!WIDGET_MAP[type]?.app }
 export function isWidget(type: string): boolean { return type in WIDGET_MAP }
 export function widgetDef(type: string): WidgetDef | undefined { return WIDGET_MAP[type] }
 export function makeWidgetProps(type: string): Record<string, any> {

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import {
   ArrowRight, Check, Info, CircleCheck, TriangleAlert, CircleAlert, Sparkle, ChevronDown, ChevronLeft, ChevronRight,
-  Twitter, Facebook, Instagram, Linkedin, Youtube, Github, UserRound, LogOut, Blocks, Loader2,
+  Twitter, Facebook, Instagram, Linkedin, Youtube, Github, UserRound, LogOut, Blocks, Loader2, MessageCircle,
 } from 'lucide-react'
 import type { Block } from '@/lib/blocks'
 import Reveal from '@/components/site/Reveal'
@@ -243,6 +243,30 @@ export default function WidgetRenderer({ block }: { block: Block }) {
       return <CollectionList p={p} />
     case 'plans':
       return <PlansWidget p={p} />
+    case 'app_youtube':
+      return <AppShell heading={p.heading}><div className="aspect-video overflow-hidden rounded-2xl ring-1 ring-slate-900/5"><iframe src={ytEmbed(p.url)} className="h-full w-full" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen /></div></AppShell>
+    case 'app_spotify':
+      return <AppShell><iframe src={spotifyEmbed(p.url)} className="w-full rounded-2xl" height={p.url && p.url.includes('/track/') ? 152 : 352} loading="lazy" allow="encrypted-media" /></AppShell>
+    case 'app_soundcloud':
+      return <AppShell><iframe src={soundcloudEmbed(p.url)} className="w-full rounded-xl" height={166} loading="lazy" allow="autoplay" /></AppShell>
+    case 'app_instagram':
+      return <ScriptEmbed html={`<blockquote class="instagram-media" data-instgrm-permalink="${p.url}" style="max-width:540px;margin:auto"></blockquote>`} src="https://www.instagram.com/embed.js" reprocess={() => (window as any).instgrm?.Embeds?.process()} />
+    case 'app_twitter':
+      return <ScriptEmbed html={`<blockquote class="twitter-tweet"><a href="${p.url}"></a></blockquote>`} src="https://platform.twitter.com/widgets.js" reprocess={() => (window as any).twttr?.widgets?.load()} />
+    case 'app_tiktok':
+      return <ScriptEmbed html={`<blockquote class="tiktok-embed" cite="${p.url}" style="max-width:605px;margin:auto"></blockquote>`} src="https://www.tiktok.com/embed.js" />
+    case 'app_github':
+      return <GitHubCard repo={p.repo} />
+    case 'app_calcom':
+      return <AppShell heading={p.heading}><iframe src={`https://cal.com/${(p.link || '').replace(/^https?:\/\/cal\.com\//, '')}`} className="h-[640px] w-full rounded-2xl ring-1 ring-slate-900/5" loading="lazy" /></AppShell>
+    case 'app_typeform':
+      return <AppShell><iframe src={typeformSrc(p.id)} className="h-[560px] w-full rounded-2xl ring-1 ring-slate-900/5" loading="lazy" /></AppShell>
+    case 'app_discord':
+      return <AppShell><iframe src={`https://discord.com/widget?id=${encodeURIComponent(p.serverId || '')}&theme=dark`} className="w-full rounded-2xl" height={400} allowTransparency loading="lazy" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts" /></AppShell>
+    case 'app_bmc':
+      return <AppShell><div className="text-center"><a href={`https://www.buymeacoffee.com/${p.username || ''}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-full bg-[#FFDD00] px-6 py-3 text-sm font-bold text-slate-900 shadow-sm">☕ {p.label || 'Buy me a coffee'}</a></div></AppShell>
+    case 'app_whatsapp':
+      return <WhatsAppButton p={p} />
     case 'faq':
       return <Faq heading={p.heading} items={p.items || []} />
     case 'tabs':
@@ -390,6 +414,87 @@ function FormWidget({ p }: { p: any }) {
 interface ShopProduct { id: string; name: string; description: string; price: number; currency: string; image: string }
 interface ColField { key: string; label: string; type: string }
 interface PlanItem { id: string; name: string; priceCents: number; interval: string; description?: string; features?: string[] }
+function AppShell({ heading, children }: { heading?: string; children: React.ReactNode }) {
+  return (
+    <section className="px-6 py-8">
+      <div className="mx-auto max-w-2xl">
+        {heading && <h2 className="site-heading mb-5 text-center text-2xl font-bold text-slate-900">{heading}</h2>}
+        {children}
+      </div>
+    </section>
+  )
+}
+
+function ytEmbed(u = '') {
+  const list = u.match(/[?&]list=([\w-]+)/)
+  if (list) return `https://www.youtube.com/embed/videoseries?list=${list[1]}`
+  const id = u.match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/)
+  return id ? `https://www.youtube.com/embed/${id[1]}` : u
+}
+function spotifyEmbed(u = '') {
+  return u.replace('open.spotify.com/', 'open.spotify.com/embed/')
+}
+function soundcloudEmbed(u = '') {
+  return `https://w.soundcloud.com/player/?url=${encodeURIComponent(u)}&color=%23ff5500&auto_play=false&show_comments=false`
+}
+function typeformSrc(idOrUrl = '') {
+  if (idOrUrl.startsWith('http')) return idOrUrl
+  return `https://form.typeform.com/to/${idOrUrl}`
+}
+
+function ScriptEmbed({ html, src, reprocess }: { html: string; src: string; reprocess?: () => void }) {
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!ref.current) return
+    ref.current.innerHTML = html
+    const existing = document.querySelector(`script[src="${src}"]`)
+    if (existing) { reprocess?.(); return }
+    const s = document.createElement('script'); s.src = src; s.async = true
+    s.onload = () => reprocess?.()
+    document.body.appendChild(s)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [html, src])
+  return <section className="px-6 py-8"><div className="mx-auto max-w-xl" ref={ref} /></section>
+}
+
+function GitHubCard({ repo }: { repo?: string }) {
+  const [data, setData] = useState<any>(null)
+  const [err, setErr] = useState(false)
+  useEffect(() => {
+    if (!repo) return
+    fetch(`https://api.github.com/repos/${repo.replace(/^https?:\/\/github\.com\//, '').trim()}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject())).then(setData).catch(() => setErr(true))
+  }, [repo])
+  return (
+    <AppShell>
+      {!repo ? <div className="rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-400">Set a repository (owner/name).</div>
+        : err ? <div className="rounded-2xl border border-slate-200 p-6 text-center text-sm text-slate-400">Couldn’t load {repo}.</div>
+        : !data ? <div className="rounded-2xl border border-slate-200 p-6 text-center text-sm text-slate-400">Loading…</div>
+        : (
+          <a href={data.html_url} target="_blank" rel="noopener noreferrer" className="block rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
+            <div className="flex items-center gap-2 text-slate-900"><Github className="h-5 w-5" /><span className="site-heading font-bold">{data.full_name}</span></div>
+            {data.description && <p className="mt-2 text-sm text-slate-500">{data.description}</p>}
+            <div className="mt-3 flex gap-4 text-xs text-slate-500">
+              <span>★ {data.stargazers_count?.toLocaleString?.() ?? data.stargazers_count}</span>
+              <span>⑂ {data.forks_count}</span>
+              {data.language && <span>{data.language}</span>}
+            </div>
+          </a>
+        )}
+    </AppShell>
+  )
+}
+
+function WhatsAppButton({ p }: { p: any }) {
+  const href = `https://wa.me/${(p.phone || '').replace(/\D/g, '')}?text=${encodeURIComponent(p.message || '')}`
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer" aria-label="Chat on WhatsApp"
+      className="fixed bottom-6 left-6 z-40 grid h-14 w-14 place-items-center rounded-full bg-[#25D366] text-white shadow-2xl transition-transform hover:-translate-y-0.5">
+      <MessageCircle className="h-7 w-7" />
+    </a>
+  )
+}
+
 function PlansWidget({ p }: { p: any }) {
   const [plans, setPlans] = useState<PlanItem[]>([])
   const [busy, setBusy] = useState('')
