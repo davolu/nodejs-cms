@@ -58,3 +58,10 @@ export function BrandLogo({ slug, className }: { slug: string; className?: strin
     </svg>
   )
 }
+
+// A lucide-compatible icon component bound to a brand slug (for connected data widgets).
+export function brandIconComponent(slug: string) {
+  const Icon = ({ className }: { className?: string }) => <BrandLogo slug={slug} className={className} />
+  Icon.displayName = `BrandIcon(${slug})`
+  return Icon
+}

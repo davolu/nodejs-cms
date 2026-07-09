@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { ACTION_MAP } from '@/lib/actions'
-import { connectionsRepo } from '@/lib/store'
+import { connectorConnected } from '@/lib/connect'
 import { isAuthed } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
@@ -12,8 +12,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const action = ACTION_MAP[params.id]
   if (!action) return NextResponse.json({ error: 'Unknown action' }, { status: 404 })
 
-  const conn = await connectionsRepo.get(action.connector)
-  if (!conn) return NextResponse.json({ error: `${action.connector} is not connected` }, { status: 400 })
+  // Webhook needs no connection; everything else must be connected/configured.
+  if (action.connector !== 'webhook' && !(await connectorConnected(action.connector))) {
+    return NextResponse.json({ error: `${action.connector} is not connected` }, { status: 400 })
+  }
 
   const input = await req.json().catch(() => ({}))
   try {

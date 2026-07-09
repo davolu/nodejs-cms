@@ -9,10 +9,12 @@ export interface Connector {
   category: string
   brand: string                 // simple-icons slug (for the logo)
   description: string
-  clientIdEnv: string
-  clientSecretEnv: string
-  authorizeUrl: string
-  tokenUrl: string
+  auth?: 'oauth2' | 'apikey'    // default oauth2
+  clientIdEnv?: string
+  clientSecretEnv?: string
+  apiKeyEnv?: string[]          // for apikey connectors (present == connected)
+  authorizeUrl?: string
+  tokenUrl?: string
   scopes: string[]
   scopeSeparator?: string       // default ' '
   extraAuthParams?: Record<string, string>
@@ -22,7 +24,7 @@ export interface Connector {
   userInfoUrl?: string
   accountEmailPath?: string     // dot path into userinfo JSON
   accountNamePath?: string
-  setupUrl?: string             // where the user creates the OAuth app
+  setupUrl?: string             // where the user creates the OAuth app / gets keys
 }
 
 const GOOGLE = {
@@ -80,12 +82,20 @@ export const CONNECTORS: Connector[] = [
     clientIdEnv: 'HUBSPOT_CLIENT_ID', clientSecretEnv: 'HUBSPOT_CLIENT_SECRET',
     authorizeUrl: 'https://app.hubspot.com/oauth/authorize', tokenUrl: 'https://api.hubapi.com/oauth/v1/token',
     scopes: ['crm.objects.contacts.read', 'crm.objects.contacts.write'], setupUrl: 'https://developers.hubspot.com/' },
+
+  // ── API-key connectors (configured via env vars, no OAuth dance) ──
+  { id: 'mailchimp', name: 'Mailchimp', category: 'Email', brand: 'mailchimp', description: 'Add subscribers to a Mailchimp audience.',
+    auth: 'apikey', apiKeyEnv: ['MAILCHIMP_API_KEY'], scopes: [], setupUrl: 'https://admin.mailchimp.com/account/api/' },
+  { id: 'stripe', name: 'Stripe', category: 'Payments', brand: 'stripe', description: 'Create customers and payment links.',
+    auth: 'apikey', apiKeyEnv: ['STRIPE_SECRET_KEY'], scopes: [], setupUrl: 'https://dashboard.stripe.com/apikeys' },
 ]
 
 export const CONNECTOR_MAP: Record<string, Connector> = Object.fromEntries(CONNECTORS.map((c) => [c.id, c]))
 export function getConnector(id: string): Connector | undefined { return CONNECTOR_MAP[id] }
 
-// A connector is "configured" when both OAuth client env vars are present.
+// A connector is "configured" when its credentials are present in the environment.
 export function connectorConfigured(c: Connector): boolean {
-  return !!(process.env[c.clientIdEnv] && process.env[c.clientSecretEnv])
+  if (c.auth === 'apikey') return (c.apiKeyEnv || []).every((e) => !!process.env[e])
+  return !!(c.clientIdEnv && process.env[c.clientIdEnv] && c.clientSecretEnv && process.env[c.clientSecretEnv])
 }
+export function isApiKey(c: Connector): boolean { return c.auth === 'apikey' }

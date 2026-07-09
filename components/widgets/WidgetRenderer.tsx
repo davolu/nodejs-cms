@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import {
   ArrowRight, Check, Info, CircleCheck, TriangleAlert, CircleAlert, Sparkle, ChevronDown, ChevronLeft, ChevronRight,
-  Twitter, Facebook, Instagram, Linkedin, Youtube, Github, UserRound, LogOut, Blocks, Loader2, MessageCircle,
+  Twitter, Facebook, Instagram, Linkedin, Youtube, Github, UserRound, LogOut, Blocks, Loader2, MessageCircle, CalendarClock,
 } from 'lucide-react'
 import type { Block } from '@/lib/blocks'
 import Reveal from '@/components/site/Reveal'
@@ -267,6 +267,12 @@ export default function WidgetRenderer({ block }: { block: Block }) {
       return <AppShell><div className="text-center"><a href={`https://www.buymeacoffee.com/${p.username || ''}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-full bg-[#FFDD00] px-6 py-3 text-sm font-bold text-slate-900 shadow-sm">☕ {p.label || 'Buy me a coffee'}</a></div></AppShell>
     case 'app_whatsapp':
       return <WhatsAppButton p={p} />
+    case 'sheets_table':
+      return <SheetsTable p={p} />
+    case 'drive_files':
+      return <DriveFiles p={p} />
+    case 'calendar_events':
+      return <CalendarEvents p={p} />
     case 'faq':
       return <Faq heading={p.heading} items={p.items || []} />
     case 'tabs':
@@ -481,6 +487,89 @@ function GitHubCard({ repo }: { repo?: string }) {
             </div>
           </a>
         )}
+    </AppShell>
+  )
+}
+
+function ConnectedEmpty({ heading, msg }: { heading?: string; msg: string }) {
+  return <AppShell heading={heading}><div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-400">{msg}</div></AppShell>
+}
+
+function SheetsTable({ p }: { p: any }) {
+  const [rows, setRows] = useState<string[][]>([])
+  const [state, setState] = useState<'loading' | 'ok' | 'empty'>('loading')
+  useEffect(() => {
+    if (!p.spreadsheetId) { setState('empty'); return }
+    fetch(`/api/connected/sheets?id=${encodeURIComponent(p.spreadsheetId)}&range=${encodeURIComponent(p.range || 'A1:E20')}`)
+      .then((r) => r.json()).then((d) => { setRows(d.rows || []); setState((d.rows || []).length ? 'ok' : 'empty') }).catch(() => setState('empty'))
+  }, [p.spreadsheetId, p.range])
+  if (state === 'loading') return <ConnectedEmpty heading={p.heading} msg="Loading…" />
+  if (state === 'empty') return <ConnectedEmpty heading={p.heading} msg={p.spreadsheetId ? 'No data (connect Google Sheets and check the ID/range).' : 'Set a spreadsheet ID in the widget settings.'} />
+  const [head, ...body] = rows
+  return (
+    <section className="px-6 py-10">
+      <div className="mx-auto max-w-4xl">
+        {p.heading && <h2 className="site-heading mb-5 text-center text-2xl font-bold text-slate-900">{p.heading}</h2>}
+        <div className="overflow-x-auto rounded-2xl ring-1 ring-slate-200">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-slate-50 text-slate-600"><tr>{head.map((h, i) => <th key={i} className="px-4 py-2.5 font-semibold">{h}</th>)}</tr></thead>
+            <tbody className="divide-y divide-slate-100">
+              {body.map((r, i) => <tr key={i}>{head.map((_, j) => <td key={j} className="px-4 py-2.5 text-slate-700">{r[j] ?? ''}</td>)}</tr>)}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function DriveFiles({ p }: { p: any }) {
+  const [files, setFiles] = useState<any[]>([])
+  const [state, setState] = useState<'loading' | 'ok' | 'empty'>('loading')
+  useEffect(() => {
+    fetch(`/api/connected/drive?limit=${p.limit || 10}`).then((r) => r.json())
+      .then((d) => { setFiles(d.files || []); setState((d.files || []).length ? 'ok' : 'empty') }).catch(() => setState('empty'))
+  }, [p.limit])
+  if (state === 'loading') return <ConnectedEmpty heading={p.heading} msg="Loading…" />
+  if (state === 'empty') return <ConnectedEmpty heading={p.heading} msg="No files (connect Google Drive to list files here)." />
+  return (
+    <AppShell heading={p.heading}>
+      <ul className="divide-y divide-slate-100 rounded-2xl ring-1 ring-slate-200">
+        {files.map((f) => (
+          <li key={f.id}>
+            <a href={f.webViewLink} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-slate-50">
+              <span className="truncate text-sm font-medium text-slate-700">{f.name}</span>
+              <span className="shrink-0 text-xs text-slate-400">{f.modifiedTime ? new Date(f.modifiedTime).toLocaleDateString() : ''}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </AppShell>
+  )
+}
+
+function CalendarEvents({ p }: { p: any }) {
+  const [events, setEvents] = useState<any[]>([])
+  const [state, setState] = useState<'loading' | 'ok' | 'empty'>('loading')
+  useEffect(() => {
+    fetch(`/api/connected/calendar?limit=${p.limit || 5}`).then((r) => r.json())
+      .then((d) => { setEvents(d.events || []); setState((d.events || []).length ? 'ok' : 'empty') }).catch(() => setState('empty'))
+  }, [p.limit])
+  if (state === 'loading') return <ConnectedEmpty heading={p.heading} msg="Loading…" />
+  if (state === 'empty') return <ConnectedEmpty heading={p.heading} msg="No upcoming events (connect Google Calendar)." />
+  return (
+    <AppShell heading={p.heading}>
+      <ul className="space-y-2">
+        {events.map((e) => (
+          <li key={e.id} className="flex items-center gap-3 rounded-xl bg-white px-4 py-3 ring-1 ring-slate-200">
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg text-white" style={grad}><CalendarClock className="h-5 w-5" /></div>
+            <div className="min-w-0">
+              <div className="truncate text-sm font-semibold text-slate-800">{e.summary}</div>
+              <div className="text-xs text-slate-400">{e.start ? new Date(e.start).toLocaleString() : ''}{e.location ? ` · ${e.location}` : ''}</div>
+            </div>
+          </li>
+        ))}
+      </ul>
     </AppShell>
   )
 }

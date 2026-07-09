@@ -1,6 +1,15 @@
-import { getConnector } from './connectors'
+import { getConnector, connectorConfigured, isApiKey } from './connectors'
 import { refreshToken } from './oauth'
 import { connectionsRepo } from './store'
+
+// An app is usable when: API-key connectors have their env set; OAuth connectors
+// have completed the flow (a stored connection).
+export async function connectorConnected(id: string): Promise<boolean> {
+  const c = getConnector(id)
+  if (!c) return false
+  if (isApiKey(c)) return connectorConfigured(c)
+  return !!(await connectionsRepo.get(id))
+}
 
 // Returns a valid access token for a connected app, refreshing it if expired.
 // Throws if the app isn't connected or can't be refreshed.

@@ -6,7 +6,7 @@ import {
   Youtube, Music, Music2, Video, Github, Instagram, Twitter, Coffee, MessageCircle,
 } from 'lucide-react'
 import { WIDGETS } from '@/lib/widgets'
-import { appIconComponent } from './AppIcon'
+import { appIconComponent, brandIconComponent } from './AppIcon'
 
 const NAME_ICON: Record<string, any> = {
   LayoutTemplate, Grid3x3, BarChart3, Megaphone, Quote, Heading, Type, ImageIcon, MousePointerClick,
@@ -16,7 +16,7 @@ const NAME_ICON: Record<string, any> = {
   Youtube, Music, Music2, Video, Github, Instagram, Twitter, Coffee, MessageCircle,
 }
 
-export interface CatalogItem { type: string; label: string; category: string; icon: any; app?: boolean }
+export interface CatalogItem { type: string; label: string; category: string; icon: any; app?: boolean; requiresConnector?: string }
 
 const CORE: CatalogItem[] = [
   { type: 'heading', label: 'Heading', category: 'Basic', icon: Heading },
@@ -30,23 +30,29 @@ const CORE: CatalogItem[] = [
   { type: 'quote', label: 'Quote', category: 'Sections', icon: Quote },
 ]
 
-const WIDGET_ITEMS: CatalogItem[] = WIDGETS.map((w) => ({ type: w.type, label: w.label, category: w.category, icon: NAME_ICON[w.icon] || Sparkle, app: w.app }))
+const CONNECTOR_SLUG: Record<string, string> = { 'google-sheets': 'googlesheets', 'google-drive': 'googledrive', 'google-calendar': 'googlecalendar' }
+const WIDGET_ITEMS: CatalogItem[] = WIDGETS.map((w) => ({ type: w.type, label: w.label, category: w.category, icon: NAME_ICON[w.icon] || Sparkle, app: w.app, requiresConnector: w.requiresConnector }))
 
 export const CATALOG: CatalogItem[] = [...CORE, ...WIDGET_ITEMS]
-export const CATEGORY_ORDER = ['Basic', 'Sections', 'Layout', 'Content', 'Media', 'Marketing', 'Shop', 'Forms', 'Members', 'Interactive', 'Embed', 'Social', 'Apps']
+export const CATEGORY_ORDER = ['Basic', 'Sections', 'Layout', 'Content', 'Media', 'Marketing', 'Shop', 'Forms', 'Members', 'Interactive', 'Embed', 'Social', 'Connected', 'Apps']
 
-// Apps only appear once installed; all other widgets always show.
-export function catalogByCategory(query = '', installed: string[] = []): { label: string; items: CatalogItem[] }[] {
+// Apps show once installed; connected data widgets show once their connector is linked.
+export function catalogByCategory(query = '', installed: string[] = [], connected: string[] = []): { label: string; items: CatalogItem[] }[] {
   const q = query.trim().toLowerCase()
+  const visible = (c: CatalogItem) => (!c.app || installed.includes(c.type)) && (!c.requiresConnector || connected.includes(c.requiresConnector))
   return CATEGORY_ORDER.map((label) => ({
     label,
-    items: CATALOG.filter((c) => c.category === label && (!c.app || installed.includes(c.type)) && (!q || c.label.toLowerCase().includes(q))),
+    items: CATALOG.filter((c) => c.category === label && visible(c) && (!q || c.label.toLowerCase().includes(q))),
   })).filter((g) => g.items.length > 0)
 }
 
-export function visibleCatalog(installed: string[] = []): CatalogItem[] {
-  return CATALOG.filter((c) => !c.app || installed.includes(c.type))
+export function visibleCatalog(installed: string[] = [], connected: string[] = []): CatalogItem[] {
+  return CATALOG.filter((c) => (!c.app || installed.includes(c.type)) && (!c.requiresConnector || connected.includes(c.requiresConnector)))
 }
 
-export const iconMap: Record<string, any> = Object.fromEntries(CATALOG.map((c) => [c.type, (c.app && appIconComponent(c.type)) || c.icon]))
+export const iconMap: Record<string, any> = Object.fromEntries(CATALOG.map((c) => {
+  if (c.app) return [c.type, appIconComponent(c.type) || c.icon]
+  if (c.requiresConnector && CONNECTOR_SLUG[c.requiresConnector]) return [c.type, brandIconComponent(CONNECTOR_SLUG[c.requiresConnector])]
+  return [c.type, c.icon]
+}))
 export const CATALOG_COUNT = CATALOG.length

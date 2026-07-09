@@ -15,6 +15,8 @@ const APPS = [
   { key: 'slack', connector: 'slack', brand: 'slack', name: 'Slack', desc: 'Post each submission to a channel.', fields: [{ k: 'channel', label: 'Channel ID', placeholder: 'C0123456789' }] },
   { key: 'sheets', connector: 'google-sheets', brand: 'googlesheets', name: 'Google Sheets', desc: 'Append each submission as a row.', fields: [{ k: 'spreadsheetId', label: 'Spreadsheet ID', placeholder: 'from the sheet URL' }, { k: 'range', label: 'Range (optional)', placeholder: 'Sheet1!A1' }] },
   { key: 'hubspot', connector: 'hubspot', brand: 'hubspot', name: 'HubSpot', desc: 'Create/update a contact from the email field.', fields: [] },
+  { key: 'mailchimp', connector: 'mailchimp', brand: 'mailchimp', name: 'Mailchimp', desc: 'Add the submitter to a Mailchimp audience.', fields: [{ k: 'listId', label: 'Audience (List) ID', placeholder: 'e.g. a1b2c3d4e5' }] },
+  { key: 'webhook', connector: 'webhook', brand: 'webhook', name: 'Webhook', desc: 'POST the submission JSON to any URL (Zapier, Make, n8n…).', fields: [{ k: 'url', label: 'Webhook URL', placeholder: 'https://…' }], always: true },
 ]
 
 export default function AutomationsPage() {
@@ -51,7 +53,7 @@ export default function AutomationsPage() {
         <div className="max-w-2xl space-y-4">
           {APPS.map((app) => {
             const on = !!auto[app.key]?.enabled
-            const isConn = connected.has(app.connector)
+            const isConn = (app as any).always || connected.has(app.connector)
             return (
               <div key={app.key} className="card p-5">
                 <div className="flex items-center gap-3">

@@ -1,10 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Block, BlockType, blockId, variantsFor, THEME_NAMES } from '@/lib/blocks'
+import { makeWidgetProps, WIDGET_MAP } from '@/lib/widgets'
+import { CONNECTORS } from '@/lib/connectors'
+import { connectorConnected } from '@/lib/connect'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 45
 
 const ALLOWED: BlockType[] = ['hero', 'heading', 'paragraph', 'image', 'button', 'quote', 'features', 'stats', 'cta']
+// Widget blocks the AI may also place. Each is rendered generically via its props.
+const WIDGET_ALLOW: Record<string, string> = {
+  contact: 'a contact form (its submissions can trigger your automations)',
+  newsletter: 'an email signup form',
+  plans: 'a pricing/subscription plans section',
+  sheets_table: 'a live table from a connected Google Sheet — requires "spreadsheetId" and "range"',
+  drive_files: 'a live list of Google Drive files',
+  calendar_events: 'a list of upcoming Google Calendar events',
+}
+// Which connector each widget needs (undefined = always available).
+const WIDGET_REQUIRES: Record<string, string | undefined> = {
+  sheets_table: 'google-sheets', drive_files: 'google-drive', calendar_events: 'google-calendar',
+}
 
 const SYSTEM = `You are a web designer that lays out marketing pages for a block-based CMS.
 Design the page to fit the user's prompt — vary the THEME, layout, section order, and block VARIANTS so pages for different prompts look genuinely different (not one fixed template).
@@ -45,7 +61,7 @@ function normalizeBlocks(raw: any): Block[] {
   const out: Block[] = []
   for (const b of raw) {
     const type = b?.type as BlockType
-    if (!ALLOWED.includes(type)) continue
+    if (!ALLOWED.includes(type) && !WIDGET_ALLOW[type as string]) continue
     const id = blockId()
     switch (type) {
       case 'hero':
@@ -73,6 +89,19 @@ function normalizeBlocks(raw: any): Block[] {
       }
       case 'cta':
         out.push({ id, type, variant: clampVariant(type, b.variant), heading: S(b.heading, 'Ready to start?'), label: S(b.label, 'Get started'), href: S(b.href, '#') }); break
+      default: {
+        // Widget blocks: merge sanitized string/number props over the widget defaults.
+        if (WIDGET_ALLOW[type as string] && WIDGET_MAP[type as string]) {
+          const props: Record<string, any> = makeWidgetProps(type as string)
+          if (b && typeof b === 'object') {
+            for (const [k, v] of Object.entries(b)) {
+              if (k === 'type') continue
+              if (typeof v === 'string' || typeof v === 'number') props[k] = v
+            }
+          }
+          out.push({ id, type, props } as Block)
+        }
+      }
     }
   }
   return out
@@ -87,11 +116,24 @@ export async function POST(req: NextRequest) {
 
   const model = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6'
 
+  // Figure out which integration widgets are available (connected apps + always-on ones).
+  const available: string[] = []
+  for (const type of Object.keys(WIDGET_ALLOW)) {
+    const req = WIDGET_REQUIRES[type]
+    if (!req || (await connectorConnected(req))) available.push(type)
+  }
+  const widgetNote = available.length
+    ? `\n\nYou may ALSO use these widget blocks where they fit the page (each as { "type": "<type>", ...fields }):\n` +
+      available.map((t) => `- ${t}: ${WIDGET_ALLOW[t]}`).join('\n') +
+      `\nOnly use a widget when it genuinely fits the user's request.`
+    : ''
+  const system = SYSTEM + widgetNote
+
   try {
     const resp = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model, max_tokens: 2200, system: SYSTEM, messages: [{ role: 'user', content: `Design a page for: ${prompt}` }] }),
+      body: JSON.stringify({ model, max_tokens: 2200, system, messages: [{ role: 'user', content: `Design a page for: ${prompt}` }] }),
     })
     if (!resp.ok) {
       const detail = await resp.text().catch(() => '')

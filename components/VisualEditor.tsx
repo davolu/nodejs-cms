@@ -21,7 +21,7 @@ import WidgetFields from '@/components/widgets/WidgetFields'
 import MediaInput from '@/components/media/MediaInput'
 import { CATALOG, catalogByCategory, iconMap, CATALOG_COUNT } from '@/components/widgets/catalog'
 
-const ALL_TYPES: BlockType[] = CATALOG.filter((c) => !c.app).map((c) => c.type)
+const ALL_TYPES: BlockType[] = CATALOG.filter((c) => !c.app && !c.requiresConnector).map((c) => c.type)
 
 export default function VisualEditor({
   blocks, onChange, theme, onSave, onPreview, saving,
@@ -164,10 +164,12 @@ export default function VisualEditor({
 function WidgetPanel({ onAdd }: { onAdd: (t: BlockType) => void }) {
   const [q, setQ] = useState('')
   const [installed, setInstalled] = useState<string[]>([])
+  const [connected, setConnected] = useState<string[]>([])
   useEffect(() => {
     fetch('/api/apps').then((r) => r.json()).then((d) => setInstalled(Array.isArray(d.installed) ? d.installed : [])).catch(() => {})
+    fetch('/api/connectors').then((r) => r.json()).then((d) => setConnected(Array.isArray(d) ? d.filter((c: any) => c.connected).map((c: any) => c.id) : [])).catch(() => {})
   }, [])
-  const groups = catalogByCategory(q, installed)
+  const groups = catalogByCategory(q, installed, connected)
   return (
     <aside className="hidden w-72 shrink-0 flex-col border-r border-slate-200 bg-white md:flex">
       <div className="border-b border-slate-100 p-3">

@@ -23,6 +23,7 @@ export interface WidgetDef {
   fields: Field[]
   app?: boolean     // true = installable third-party "app" (shown in the App Store)
   appDescription?: string
+  requiresConnector?: string  // renders live data from a connected app (shown in "Connected")
 }
 
 const txt = (key: string, label: string, placeholder = ''): Field => ({ key, label, type: 'text', placeholder })
@@ -173,6 +174,17 @@ export const WIDGETS: WidgetDef[] = [
   { type: 'social', label: 'Social Icons', category: 'Social', icon: 'Share2', kind: 'social',
     defaults: { items: [{ platform: 'twitter', href: '#' }, { platform: 'facebook', href: '#' }, { platform: 'instagram', href: '#' }, { platform: 'linkedin', href: '#' }] },
     fields: [{ key: 'items', label: 'Links', type: 'items', itemFields: [{ key: 'platform', label: 'Platform', type: 'select', options: ['twitter', 'facebook', 'instagram', 'linkedin', 'youtube', 'github'] }, url('href', 'Link')] }] },
+
+  // ── Connected (live data from a connected app) ──
+  { type: 'sheets_table', label: 'Sheet Table', category: 'Connected', icon: 'Table', kind: 'sheets_table', requiresConnector: 'google-sheets',
+    defaults: { heading: '', spreadsheetId: '', range: 'A1:E20' },
+    fields: [txt('heading', 'Heading (optional)'), txt('spreadsheetId', 'Spreadsheet ID', 'from the sheet URL'), txt('range', 'Range', 'Sheet1!A1:E20')] },
+  { type: 'drive_files', label: 'Drive Files', category: 'Connected', icon: 'FolderOpen', kind: 'drive_files', requiresConnector: 'google-drive',
+    defaults: { heading: 'Files', limit: '10' },
+    fields: [txt('heading', 'Heading'), { key: 'limit', label: 'Max files', type: 'select', options: ['5', '10', '20', '50'] }] },
+  { type: 'calendar_events', label: 'Calendar Events', category: 'Connected', icon: 'CalendarClock', kind: 'calendar_events', requiresConnector: 'google-calendar',
+    defaults: { heading: 'Upcoming events', limit: '5' },
+    fields: [txt('heading', 'Heading'), { key: 'limit', label: 'Max events', type: 'select', options: ['3', '5', '10'] }] },
 
   // ── Apps (installable third-party integrations) ──
   { type: 'app_youtube', label: 'YouTube', category: 'Apps', icon: 'Youtube', kind: 'app_youtube', app: true,
