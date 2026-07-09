@@ -1,5 +1,5 @@
 import { Pool } from 'pg'
-import { seedPages, seedPosts, seedMedia, seedSettings } from './seed'
+import { seedPages, seedPosts, seedMedia, seedSettings, seedUsers } from './seed'
 import { SCHEMA_SQL } from './schema'
 
 // A single shared pool across hot-reloads / serverless invocations.
@@ -35,9 +35,9 @@ async function initOnce(): Promise<void> {
   if (rows[0].c === 0) {
     for (const p of seedPages) {
       await pool.query(
-        `INSERT INTO pages (id,title,slug,blocks,theme,template,meta_title,meta_desc,status,updated_at,created_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) ON CONFLICT (id) DO NOTHING`,
-        [p.id, p.title, p.slug, JSON.stringify(p.blocks), p.theme, p.template, p.metaTitle, p.metaDescription, p.status, p.updatedAt, p.createdAt]
+        `INSERT INTO pages (id,title,slug,blocks,theme,access,template,meta_title,meta_desc,status,updated_at,created_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) ON CONFLICT (id) DO NOTHING`,
+        [p.id, p.title, p.slug, JSON.stringify(p.blocks), p.theme, p.access, p.template, p.metaTitle, p.metaDescription, p.status, p.updatedAt, p.createdAt]
       )
     }
     for (const p of seedPosts) {
@@ -58,6 +58,12 @@ async function initOnce(): Promise<void> {
       await pool.query(
         `INSERT INTO settings (key,value,updated_at) VALUES ($1,$2,$3) ON CONFLICT (key) DO NOTHING`,
         [s.key, s.value, s.updatedAt]
+      )
+    }
+    for (const u of seedUsers) {
+      await pool.query(
+        `INSERT INTO users (id,email,name,password_hash,created_at) VALUES ($1,$2,$3,$4,$5) ON CONFLICT (email) DO NOTHING`,
+        [u.id, u.email, u.name, u.passwordHash, u.createdAt]
       )
     }
   }

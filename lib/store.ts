@@ -1,7 +1,7 @@
 import { hasDb, query } from './db'
 import {
-  Page, Post, MediaItem, Setting, Submission,
-  seedPages, seedPosts, seedMedia, seedSettings, seedSubmissions,
+  Page, Post, MediaItem, Setting, Submission, User,
+  seedPages, seedPosts, seedMedia, seedSettings, seedSubmissions, seedUsers,
 } from './seed'
 
 // ── In-memory fallback stores (deep-cloned so mutations don't touch the seed) ──
@@ -11,6 +11,7 @@ const mem = {
   media: seedMedia.map((x) => ({ ...x })),
   settings: seedSettings.map((x) => ({ ...x })),
   submissions: seedSubmissions.map((x) => ({ ...x })),
+  users: seedUsers.map((x) => ({ ...x })),
 }
 
 const now = () => new Date().toISOString()
@@ -26,6 +27,7 @@ const toPage = (r: any): Page => ({
   id: r.id, title: r.title, slug: r.slug,
   blocks: Array.isArray(r.blocks) ? r.blocks : (typeof r.blocks === 'string' ? JSON.parse(r.blocks || '[]') : []),
   theme: r.theme || 'indigo',
+  access: r.access === 'members' ? 'members' : 'public',
   template: r.template,
   metaTitle: r.meta_title, metaDescription: r.meta_desc, status: r.status,
   updatedAt: new Date(r.updated_at).toISOString(), createdAt: new Date(r.created_at).toISOString(),
@@ -70,6 +72,7 @@ export const pagesRepo = {
       slug: input.slug || slugify(input.title || 'untitled-page'),
       blocks: Array.isArray(input.blocks) ? input.blocks : [],
       theme: input.theme || 'indigo',
+      access: input.access === 'members' ? 'members' : 'public',
       template: input.template || 'default',
       metaTitle: input.metaTitle || '',
       metaDescription: input.metaDescription || '',
@@ -79,9 +82,9 @@ export const pagesRepo = {
     }
     if (hasDb()) {
       await query(
-        `INSERT INTO pages (id,title,slug,blocks,theme,template,meta_title,meta_desc,status,updated_at,created_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
-        [page.id, page.title, page.slug, JSON.stringify(page.blocks), page.theme, page.template, page.metaTitle, page.metaDescription, page.status, page.updatedAt, page.createdAt]
+        `INSERT INTO pages (id,title,slug,blocks,theme,access,template,meta_title,meta_desc,status,updated_at,created_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+        [page.id, page.title, page.slug, JSON.stringify(page.blocks), page.theme, page.access, page.template, page.metaTitle, page.metaDescription, page.status, page.updatedAt, page.createdAt]
       )
     } else {
       mem.pages.unshift(page)
@@ -94,8 +97,8 @@ export const pagesRepo = {
     const merged: Page = { ...existing, ...input, id, updatedAt: now() }
     if (hasDb()) {
       await query(
-        `UPDATE pages SET title=$2,slug=$3,blocks=$4,theme=$5,template=$6,meta_title=$7,meta_desc=$8,status=$9,updated_at=$10 WHERE id=$1`,
-        [id, merged.title, merged.slug, JSON.stringify(merged.blocks), merged.theme, merged.template, merged.metaTitle, merged.metaDescription, merged.status, merged.updatedAt]
+        `UPDATE pages SET title=$2,slug=$3,blocks=$4,theme=$5,access=$6,template=$7,meta_title=$8,meta_desc=$9,status=$10,updated_at=$11 WHERE id=$1`,
+        [id, merged.title, merged.slug, JSON.stringify(merged.blocks), merged.theme, merged.access, merged.template, merged.metaTitle, merged.metaDescription, merged.status, merged.updatedAt]
       )
     } else {
       const i = mem.pages.findIndex((p) => p.id === id)
@@ -293,6 +296,59 @@ export const submissionsRepo = {
   },
   async count(): Promise<number> {
     return (await this.list()).length
+  },
+}
+
+// ────────────────────────────  USERS (members)  ────────────────────
+const toUser = (r: any): User => ({
+  id: r.id, email: r.email, name: r.name, passwordHash: r.password_hash,
+  createdAt: new Date(r.created_at).toISOString(),
+})
+export const usersRepo = {
+  async findByEmail(email: string): Promise<User | null> {
+    const e = email.trim().toLowerCase()
+    if (hasDb()) {
+      const rows = await query('SELECT * FROM users WHERE lower(email)=$1', [e])
+      return rows[0] ? toUser(rows[0]) : null
+    }
+    return mem.users.find((u) => u.email.toLowerCase() === e) ?? null
+  },
+  async findById(id: string): Promise<User | null> {
+    if (hasDb()) {
+      const rows = await query('SELECT * FROM users WHERE id=$1', [id])
+      return rows[0] ? toUser(rows[0]) : null
+    }
+    return mem.users.find((u) => u.id === id) ?? null
+  },
+  async create(input: { email: string; name: string; passwordHash: string }): Promise<User> {
+    const user: User = {
+      id: newId('usr'),
+      email: input.email.trim().toLowerCase(),
+      name: (input.name || '').trim(),
+      passwordHash: input.passwordHash,
+      createdAt: now(),
+    }
+    if (hasDb()) {
+      await query('INSERT INTO users (id,email,name,password_hash,created_at) VALUES ($1,$2,$3,$4,$5)',
+        [user.id, user.email, user.name, user.passwordHash, user.createdAt])
+    } else {
+      mem.users.push(user)
+    }
+    return user
+  },
+  async list(): Promise<Omit<User, 'passwordHash'>[]> {
+    const rows = hasDb() ? (await query('SELECT * FROM users ORDER BY created_at DESC')).map(toUser) : [...mem.users]
+    return rows.map(({ passwordHash, ...u }) => u).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  },
+  async remove(id: string): Promise<boolean> {
+    if (hasDb()) {
+      const rows = await query('DELETE FROM users WHERE id=$1 RETURNING id', [id])
+      return rows.length > 0
+    }
+    const i = mem.users.findIndex((u) => u.id === id)
+    if (i === -1) return false
+    mem.users.splice(i, 1)
+    return true
   },
 }
 

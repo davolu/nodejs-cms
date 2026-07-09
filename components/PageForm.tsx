@@ -23,6 +23,7 @@ export default function PageForm({ initial }: Props) {
   const [slugTouched, setSlugTouched] = useState(editing)
   const [blocks, setBlocks] = useState<Block[]>(initial?.blocks ?? [])
   const [theme, setTheme] = useState<string>(initial?.theme ?? 'indigo')
+  const [access, setAccess] = useState<'public' | 'members'>(initial?.access ?? 'public')
   const [mode, setMode] = useState<'visual' | 'form'>('visual')
   const [form, setForm] = useState({
     title: initial?.title ?? '',
@@ -81,7 +82,7 @@ export default function PageForm({ initial }: Props) {
 
   async function persist(status?: 'draft' | 'published'): Promise<Page | null> {
     setError('')
-    const payload = { ...form, blocks, theme, status: status ?? form.status }
+    const payload = { ...form, blocks, theme, access, status: status ?? form.status }
     const res = await fetch(editing ? `/api/pages/${initial!.id}` : '/api/pages', {
       method: editing ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -254,6 +255,13 @@ export default function PageForm({ initial }: Props) {
               />
             </div>
             <p className="field-hint">This is the page&apos;s address on your live site.</p>
+
+            <label className="label mt-4">Access</label>
+            <select className="input" value={access} onChange={(e) => setAccess(e.target.value as 'public' | 'members')}>
+              <option value="public">Public — anyone can view</option>
+              <option value="members">Members only — sign-in required</option>
+            </select>
+            {access === 'members' && <p className="field-hint">Visitors must log in via a Login / Signup widget to see this page.</p>}
 
             <label className="label mt-4">Template</label>
             <select className="input" value={form.template} onChange={(e) => set('template', e.target.value)}>

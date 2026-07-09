@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import {
   LayoutDashboard, FileText, Newspaper, Image as ImageIcon,
-  Settings, Layers, Menu, X, ExternalLink, LogOut, Inbox,
+  Settings, Layers, Menu, X, ExternalLink, LogOut, Inbox, UserRound,
 } from 'lucide-react'
 
 const nav = [
@@ -14,6 +14,7 @@ const nav = [
   { href: '/admin/posts', label: 'Posts', icon: Newspaper },
   { href: '/admin/media', label: 'Media', icon: ImageIcon },
   { href: '/admin/submissions', label: 'Submissions', icon: Inbox },
+  { href: '/admin/members', label: 'Members', icon: UserRound },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ]
 

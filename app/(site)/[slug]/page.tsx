@@ -2,8 +2,10 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { pagesRepo } from '@/lib/store'
 import { isAuthed } from '@/lib/auth'
+import { getMemberId } from '@/lib/members'
 import BlockRenderer from '@/components/BlockRenderer'
 import PreviewBanner from '@/components/PreviewBanner'
+import MembersGate from '@/components/site/MembersGate'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,6 +28,7 @@ export default async function PublicPage({
   const isPreview = searchParams?.preview === '1' && isAuthed()
   if (page.status !== 'published' && !isPreview) notFound()
 
+  const gated = page.access === 'members' && !getMemberId() && !isPreview
   const leadsWithHero = page.blocks[0]?.type === 'hero'
 
   return (
@@ -35,14 +38,20 @@ export default async function PublicPage({
           <PreviewBanner backHref={`/admin/pages/${page.id}/edit`} />
         </div>
       )}
-      {!leadsWithHero && (
-        <section className="border-b border-slate-100 bg-gradient-to-b from-slate-50 to-white py-16">
-          <div className="mx-auto max-w-3xl px-6">
-            <h1 className="site-heading text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">{page.title}</h1>
-          </div>
-        </section>
+      {gated ? (
+        <MembersGate title={page.title} theme={page.theme} />
+      ) : (
+        <>
+          {!leadsWithHero && (
+            <section className="border-b border-slate-100 bg-gradient-to-b from-slate-50 to-white py-16">
+              <div className="mx-auto max-w-3xl px-6">
+                <h1 className="site-heading text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">{page.title}</h1>
+              </div>
+            </section>
+          )}
+          <BlockRenderer blocks={page.blocks} theme={page.theme} />
+        </>
       )}
-      <BlockRenderer blocks={page.blocks} theme={page.theme} />
     </>
   )
 }

@@ -8,6 +8,7 @@ export interface Page {
   slug: string
   blocks: Block[]
   theme: string
+  access: 'public' | 'members'
   template: string
   metaTitle: string
   metaDescription: string
@@ -43,6 +44,25 @@ export interface Submission {
   createdAt: string
 }
 
+export interface User {
+  id: string
+  email: string
+  name: string
+  passwordHash: string
+  createdAt: string
+}
+
+// Demo member (in-memory mode): member@acme.com / member123
+export const seedUsers: User[] = [
+  {
+    id: 'usr_demo',
+    email: 'member@acme.com',
+    name: 'Demo Member',
+    passwordHash: 'd44decfa4163a8d5bf11d35fe76bf215:1f961898f445b81a1d090c9a23c2b2b5b0d4192613444721fe4fa92e3558a6d29925a5788bd6eecf0cbe98b22162ce8917d3ae7813cb12aba7a17c09b2f91925',
+    createdAt: new Date('2026-01-01').toISOString(),
+  },
+]
+
 const iso = (d: string) => new Date(d).toISOString()
 
 export const seedPages: Page[] = [
@@ -51,6 +71,7 @@ export const seedPages: Page[] = [
     title: 'Home',
     slug: 'home',
     theme: 'indigo',
+    access: 'public',
     blocks: [
       { id: 'b1', type: 'hero', variant: 'gradient', align: 'center', heading: 'Ship content, not tickets', subheading: 'Acme gives your team a fast, friendly way to publish pages and posts.', label: 'Get started', href: '#start' },
       { id: 'b2', type: 'features', bg: 'none', heading: 'Why teams choose Acme', features: [
@@ -77,6 +98,7 @@ export const seedPages: Page[] = [
     title: 'About Us',
     slug: 'about',
     theme: 'emerald',
+    access: 'public',
     blocks: [
       { id: 'b1', type: 'hero', variant: 'split', align: 'left', heading: 'We make publishing effortless', subheading: 'Founded in 2019 to make content management fast and pleasant.', url: 'https://picsum.photos/seed/aboutteam/1000/900', label: 'Meet the team', href: '#team' },
       { id: 'b2', type: 'paragraph', align: 'left', text: 'We started with a simple idea: content management should feel great, not like a chore. Today thousands of teams use Acme to run their sites.' },
@@ -94,6 +116,7 @@ export const seedPages: Page[] = [
     title: 'Pricing',
     slug: 'pricing',
     theme: 'amber',
+    access: 'public',
     blocks: [
       { id: 'b1', type: 'hero', variant: 'minimal', align: 'left', heading: 'Simple, honest pricing', subheading: 'Pick a plan that grows with you.' },
       { id: 'b2', type: 'paragraph', align: 'left', text: 'This page is a draft — publish it to make it live.' },
@@ -110,6 +133,7 @@ export const seedPages: Page[] = [
     title: 'Contact',
     slug: 'contact',
     theme: 'sky',
+    access: 'public',
     blocks: [
       { id: 'b1', type: 'hero', variant: 'light', align: 'center', heading: 'Get in touch', subheading: 'We usually reply within one business day.' },
       { id: 'b2', type: 'cta', variant: 'dark', heading: 'Prefer email?', label: 'Email us', href: 'mailto:hello@acme.example.com' },

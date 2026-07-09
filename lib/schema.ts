@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS pages (
   slug         TEXT NOT NULL UNIQUE,
   blocks       JSONB NOT NULL DEFAULT '[]'::jsonb,
   theme        TEXT NOT NULL DEFAULT 'indigo',
+  access       TEXT NOT NULL DEFAULT 'public',
   template     TEXT NOT NULL DEFAULT 'default',
   meta_title   TEXT NOT NULL DEFAULT '',
   meta_desc    TEXT NOT NULL DEFAULT '',
@@ -19,6 +20,7 @@ CREATE TABLE IF NOT EXISTS pages (
 -- Upgrade older installs that pre-date the block-based builder.
 ALTER TABLE pages ADD COLUMN IF NOT EXISTS blocks JSONB NOT NULL DEFAULT '[]'::jsonb;
 ALTER TABLE pages ADD COLUMN IF NOT EXISTS theme TEXT NOT NULL DEFAULT 'indigo';
+ALTER TABLE pages ADD COLUMN IF NOT EXISTS access TEXT NOT NULL DEFAULT 'public';
 
 CREATE TABLE IF NOT EXISTS posts (
   id             TEXT PRIMARY KEY,
@@ -61,4 +63,12 @@ CREATE TABLE IF NOT EXISTS submissions (
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_submissions_created ON submissions(created_at DESC);
+
+CREATE TABLE IF NOT EXISTS users (
+  id            TEXT PRIMARY KEY,
+  email         TEXT NOT NULL UNIQUE,
+  name          TEXT NOT NULL DEFAULT '',
+  password_hash TEXT NOT NULL,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 `

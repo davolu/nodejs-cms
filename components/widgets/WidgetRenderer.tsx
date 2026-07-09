@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import {
   ArrowRight, Check, Info, CircleCheck, TriangleAlert, CircleAlert, Sparkle, ChevronDown, ChevronLeft, ChevronRight,
-  Twitter, Facebook, Instagram, Linkedin, Youtube, Github,
+  Twitter, Facebook, Instagram, Linkedin, Youtube, Github, UserRound, LogOut,
 } from 'lucide-react'
 import type { Block } from '@/lib/blocks'
 import Reveal from '@/components/site/Reveal'
@@ -232,6 +232,8 @@ export default function WidgetRenderer({ block }: { block: Block }) {
       return <Newsletter p={p} />
     case 'form':
       return <FormWidget p={p} />
+    case 'auth':
+      return <AuthForm p={p} />
     case 'faq':
       return <Faq heading={p.heading} items={p.items || []} />
     case 'tabs':
@@ -370,6 +372,62 @@ function FormWidget({ p }: { p: any }) {
               {status === 'sending' ? 'Sending…' : (p.label || 'Submit')}
             </button>
           </form>
+        )}
+      </div>
+    </Reveal>
+  )
+}
+
+function AuthForm({ p }: { p: any }) {
+  const [mode, setMode] = useState<'login' | 'register'>('login')
+  const [me, setMe] = useState<any>(undefined) // undefined = loading
+  const [form, setForm] = useState({ name: '', email: '', password: '' })
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
+  const set = (k: string, v: string) => setForm((s) => ({ ...s, [k]: v }))
+
+  useEffect(() => {
+    fetch('/api/member/me').then((r) => r.json()).then((d) => setMe(d.user)).catch(() => setMe(null))
+  }, [])
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault()
+    setBusy(true); setError('')
+    const url = mode === 'login' ? '/api/member/login' : '/api/member/register'
+    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) }).catch(() => null)
+    const d = res ? await res.json().catch(() => ({})) : {}
+    setBusy(false)
+    if (res && res.ok) { if (typeof window !== 'undefined') window.location.reload() }
+    else setError(d.error || 'Something went wrong.')
+  }
+  async function logout() { await fetch('/api/member/logout', { method: 'POST' }); if (typeof window !== 'undefined') window.location.reload() }
+
+  return (
+    <Reveal className="mx-auto max-w-sm px-6 py-12">
+      <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+        {p.heading && <h2 className="site-heading mb-6 text-center text-2xl font-bold text-slate-900">{p.heading}</h2>}
+        {me === undefined ? (
+          <div className="py-6 text-center text-sm text-slate-400">Loading…</div>
+        ) : me ? (
+          <div className="text-center">
+            <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full text-white" style={grad}><UserRound className="h-6 w-6" /></div>
+            <p className="font-medium text-slate-800">Signed in as {me.name || me.email}</p>
+            <button onClick={logout} className="mt-5 inline-flex items-center gap-2 rounded-full border border-slate-300 px-5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"><LogOut className="h-4 w-4" /> Log out</button>
+          </div>
+        ) : (
+          <>
+            <div className="mb-5 grid grid-cols-2 rounded-lg bg-slate-100 p-1 text-sm">
+              <button onClick={() => setMode('login')} className={`rounded-md py-1.5 font-medium ${mode === 'login' ? 'bg-white shadow text-slate-900' : 'text-slate-500'}`}>Log in</button>
+              <button onClick={() => setMode('register')} className={`rounded-md py-1.5 font-medium ${mode === 'register' ? 'bg-white shadow text-slate-900' : 'text-slate-500'}`}>Sign up</button>
+            </div>
+            <form onSubmit={submit} className="space-y-3">
+              {mode === 'register' && <input value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="Name" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none" />}
+              <input type="email" required value={form.email} onChange={(e) => set('email', e.target.value)} placeholder="Email" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none" />
+              <input type="password" required value={form.password} onChange={(e) => set('password', e.target.value)} placeholder="Password" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none" />
+              {error && <p className="text-sm text-red-600">{error}</p>}
+              <button disabled={busy} className="w-full rounded-full py-2.5 text-sm font-semibold text-white disabled:opacity-60" style={grad}>{busy ? 'Please wait…' : mode === 'login' ? 'Log in' : 'Create account'}</button>
+            </form>
+          </>
         )}
       </div>
     </Reveal>
