@@ -187,6 +187,8 @@ export const CONNECTORS: Connector[] = [
     auth: 'apikey', apiKeyEnv: ['POSTHOG_API_KEY'], scopes: [], setupUrl: 'https://posthog.com/' },
   { id: 'cloudinary', name: 'Cloudinary', category: 'Storage', brand: 'cloudinary', description: 'Store and transform images and video.',
     auth: 'apikey', apiKeyEnv: ['CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET'], scopes: [], setupUrl: 'https://console.cloudinary.com/' },
+  { id: 'google-places', name: 'Google Places', category: 'Social', brand: 'google', description: 'Show your Google reviews and place info.',
+    auth: 'apikey', apiKeyEnv: ['GOOGLE_PLACES_API_KEY'], scopes: [], setupUrl: 'https://console.cloud.google.com/apis/credentials' },
 ]
 
 export const CONNECTOR_MAP: Record<string, Connector> = Object.fromEntries(CONNECTORS.map((c) => [c.id, c]))

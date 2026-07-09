@@ -194,6 +194,15 @@ export const WIDGETS: WidgetDef[] = [
   { type: 'calendar_events', label: 'Calendar Events', category: 'Connected', icon: 'CalendarClock', kind: 'calendar_events', requiresConnector: 'google-calendar',
     defaults: { heading: 'Upcoming events', limit: '5' },
     fields: [txt('heading', 'Heading'), { key: 'limit', label: 'Max events', type: 'select', options: ['3', '5', '10'] }] },
+  { type: 'mailchimp_signup', label: 'Mailchimp Signup', category: 'Connected', icon: 'Mail', kind: 'mailchimp_signup', requiresConnector: 'mailchimp',
+    defaults: { heading: 'Join our newsletter', listId: '', button: 'Subscribe', success: "You're in — thanks for subscribing!" },
+    fields: [txt('heading', 'Heading'), txt('listId', 'Audience (List) ID'), txt('button', 'Button label'), txt('success', 'Success message')] },
+  { type: 'stripe_buy', label: 'Stripe Buy Button', category: 'Connected', icon: 'CreditCard', kind: 'stripe_buy', requiresConnector: 'stripe',
+    defaults: { label: 'Support us', amount: '10', currency: 'usd', button: 'Buy now' },
+    fields: [txt('label', 'Item name'), { key: 'amount', label: 'Amount', type: 'number' }, txt('currency', 'Currency (e.g. usd)'), txt('button', 'Button label')] },
+  { type: 'google_reviews', label: 'Google Reviews', category: 'Connected', icon: 'Star', kind: 'google_reviews', requiresConnector: 'google-places',
+    defaults: { heading: 'What customers say', placeId: '', limit: '5' },
+    fields: [txt('heading', 'Heading'), txt('placeId', 'Google Place ID'), { key: 'limit', label: 'Max reviews', type: 'select', options: ['3', '5'] }] },
 
   // ── Apps (installable third-party integrations) ──
   { type: 'app_youtube', label: 'YouTube', category: 'Apps', icon: 'Youtube', kind: 'app_youtube', app: true,

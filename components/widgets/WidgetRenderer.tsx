@@ -278,6 +278,12 @@ export default function WidgetRenderer({ block }: { block: Block }) {
       return <CalendarEvents p={p} />
     case 'social_login':
       return <SocialLogin p={p} />
+    case 'mailchimp_signup':
+      return <MailchimpSignup p={p} />
+    case 'stripe_buy':
+      return <StripeBuy p={p} />
+    case 'google_reviews':
+      return <GoogleReviews p={p} />
     case 'faq':
       return <Faq heading={p.heading} items={p.items || []} />
     case 'tabs':
@@ -576,6 +582,80 @@ function CalendarEvents({ p }: { p: any }) {
         ))}
       </ul>
     </AppShell>
+  )
+}
+
+function MailchimpSignup({ p }: { p: any }) {
+  const [email, setEmail] = useState('')
+  const [state, setState] = useState<'idle' | 'sending' | 'done' | 'error'>('idle')
+  async function submit(e: React.FormEvent) {
+    e.preventDefault(); setState('sending')
+    const r = await fetch('/api/connected/mailchimp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, listId: p.listId }) })
+    setState(r.ok ? 'done' : 'error')
+  }
+  return (
+    <section className="px-6 py-10">
+      <div className="mx-auto max-w-md text-center">
+        {p.heading && <h2 className="site-heading mb-4 text-2xl font-bold text-slate-900">{p.heading}</h2>}
+        {state === 'done' ? <div className="rounded-2xl bg-emerald-50 p-5 text-emerald-700">{p.success || 'Subscribed!'}</div> : (
+          <form onSubmit={submit} className="flex gap-2">
+            <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5" />
+            <button type="submit" disabled={state === 'sending'} className="rounded-xl px-5 py-2.5 font-semibold text-white" style={grad}>{state === 'sending' ? '…' : (p.button || 'Subscribe')}</button>
+          </form>
+        )}
+        {state === 'error' && <p className="mt-2 text-sm text-red-600">Could not subscribe. Try again.</p>}
+      </div>
+    </section>
+  )
+}
+
+function StripeBuy({ p }: { p: any }) {
+  const [loading, setLoading] = useState(false)
+  async function buy() {
+    setLoading(true)
+    const r = await fetch('/api/connected/stripe-buy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ label: p.label, amount: p.amount, currency: p.currency }) })
+    const d = await r.json().catch(() => ({}))
+    if (d.url) window.location.href = d.url; else { setLoading(false); alert(d.error || 'Could not start checkout.') }
+  }
+  const price = Number(p.amount || 0)
+  return (
+    <section className="px-6 py-10 text-center">
+      <div className="mx-auto max-w-sm rounded-2xl border border-slate-200 p-6 shadow-sm">
+        <div className="font-semibold text-slate-800">{p.label || 'Purchase'}</div>
+        {price > 0 && <div className="mt-1 text-2xl font-bold text-slate-900">{(p.currency || 'usd').toUpperCase()} {price.toFixed(2)}</div>}
+        <button onClick={buy} disabled={loading} className="mt-4 w-full rounded-xl px-5 py-3 font-semibold text-white" style={grad}>{loading ? 'Redirecting…' : (p.button || 'Buy now')}</button>
+      </div>
+    </section>
+  )
+}
+
+function GoogleReviews({ p }: { p: any }) {
+  const [data, setData] = useState<any>(null)
+  const [state, setState] = useState<'loading' | 'ok' | 'empty'>('loading')
+  useEffect(() => {
+    if (!p.placeId) { setState('empty'); return }
+    fetch(`/api/connected/reviews?placeId=${encodeURIComponent(p.placeId)}`).then((r) => r.json())
+      .then((d) => { setData(d); setState((d.reviews || []).length ? 'ok' : 'empty') }).catch(() => setState('empty'))
+  }, [p.placeId])
+  if (state === 'loading') return <ConnectedEmpty heading={p.heading} msg="Loading reviews…" />
+  if (state === 'empty') return <ConnectedEmpty heading={p.heading} msg={p.placeId ? 'No reviews found.' : 'Add a Google Place ID in the widget settings.'} />
+  const reviews = (data.reviews || []).slice(0, Number(p.limit || 5))
+  return (
+    <section className="px-6 py-10">
+      <div className="mx-auto max-w-4xl">
+        {p.heading && <h2 className="site-heading mb-2 text-center text-2xl font-bold text-slate-900">{p.heading}</h2>}
+        {data.rating != null && <div className="mb-6 text-center text-sm text-slate-500">★ {data.rating} · {data.total} Google reviews</div>}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {reviews.map((rv: any, i: number) => (
+            <div key={i} className="rounded-2xl border border-slate-200 p-5">
+              <div className="mb-1 text-amber-500">{'★'.repeat(Math.round(rv.rating || 0))}<span className="text-slate-200">{'★'.repeat(5 - Math.round(rv.rating || 0))}</span></div>
+              <p className="text-sm text-slate-600 line-clamp-5">{rv.text}</p>
+              <div className="mt-3 text-xs font-medium text-slate-500">{rv.author} · {rv.when}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
   )
 }
 

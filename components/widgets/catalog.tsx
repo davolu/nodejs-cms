@@ -31,7 +31,7 @@ const CORE: CatalogItem[] = [
   { type: 'quote', label: 'Quote', category: 'Sections', icon: Quote },
 ]
 
-const CONNECTOR_SLUG: Record<string, string> = { 'google-sheets': 'googlesheets', 'google-drive': 'googledrive', 'google-calendar': 'googlecalendar' }
+const CONNECTOR_SLUG: Record<string, string> = { 'google-sheets': 'googlesheets', 'google-drive': 'googledrive', 'google-calendar': 'googlecalendar', mailchimp: 'mailchimp', stripe: 'stripe', 'google-places': 'google' }
 const WIDGET_ITEMS: CatalogItem[] = WIDGETS.map((w) => ({ type: w.type, label: w.label, category: w.category, icon: NAME_ICON[w.icon] || Sparkle, app: w.app, requiresConnector: w.requiresConnector }))
 
 export const CATALOG: CatalogItem[] = [...CORE, ...WIDGET_ITEMS]

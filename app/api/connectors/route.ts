@@ -14,6 +14,9 @@ const POWERS: Record<string, string[]> = {
   'google-sheets': ['Sheet Table widget'],
   'google-drive': ['Drive Files widget'],
   'google-calendar': ['Calendar Events widget'],
+  mailchimp: ['Mailchimp Signup widget'],
+  stripe: ['Stripe Buy Button widget'],
+  'google-places': ['Google Reviews widget'],
 }
 
 // Status list for the admin Connectors page: configured (creds present) + connected.
