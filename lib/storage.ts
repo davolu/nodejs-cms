@@ -9,15 +9,14 @@ function sanitize(name: string): string {
   return (name || 'file').replace(/[^a-zA-Z0-9._-]/g, '-').slice(-80) || 'file'
 }
 
-// Vercel Blob — preferred on Vercel (token auto-injected as BLOB_READ_WRITE_TOKEN).
+// Vercel Blob — preferred on Vercel. Uses OIDC automatically (VERCEL_OIDC_TOKEN +
+// BLOB_STORE_ID, injected when you connect a store) and falls back to a static
+// BLOB_READ_WRITE_TOKEN if one is set.
 async function uploadBlob(buffer: Buffer, filename: string, contentType: string): Promise<string> {
   const folder = process.env.BLOB_FOLDER || 'contenthub'
-  const res = await put(`${folder}/${filename}`, buffer, {
-    access: 'public',
-    contentType,
-    addRandomSuffix: true,
-    token: process.env.BLOB_READ_WRITE_TOKEN,
-  })
+  const opts: any = { access: 'public', contentType, addRandomSuffix: true }
+  if (process.env.BLOB_READ_WRITE_TOKEN) opts.token = process.env.BLOB_READ_WRITE_TOKEN
+  const res = await put(`${folder}/${filename}`, buffer, opts)
   return res.url
 }
 
@@ -53,7 +52,9 @@ async function uploadDisk(buffer: Buffer, filename: string): Promise<string> {
   return `${base}/${name}`
 }
 
-const hasBlob = () => !!process.env.BLOB_READ_WRITE_TOKEN
+// True when a Blob store is connected — either via OIDC (BLOB_STORE_ID) or a
+// static read-write token.
+const hasBlob = () => !!(process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID)
 const hasCloudinary = () =>
   !!(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET)
 
