@@ -9,6 +9,13 @@ export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
 const slug = (s: string) => (s || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'page'
+// Ensure a slug is unique against a set of taken slugs (adds -2, -3, …). Mutates the set.
+function uniqueSlug(base: string, taken: Set<string>): string {
+  let s = base, n = 2
+  while (taken.has(s)) s = `${base}-${n++}`
+  taken.add(s)
+  return s
+}
 const ACCESS = ['public', 'members', 'subscribers', 'managers', 'admins']
 const FIELD_TYPES = ['text', 'textarea', 'image', 'url', 'number', 'date', 'boolean']
 
@@ -84,27 +91,31 @@ export async function POST(req: NextRequest) {
         // 1) Collections
         const collectionMap: Record<string, string> = {}
         const createdCollections: string[] = []
+        const takenColSlugs = new Set((await collectionsRepo.list()).map((c) => c.slug))
         for (const c of Array.isArray(parsed?.collections) ? parsed.collections.slice(0, 8) : []) {
           if (!c?.name) continue
           const fields = (Array.isArray(c.fields) ? c.fields : []).filter((f: any) => f?.label).map((f: any) => ({
             key: slug(f.label).replace(/-/g, '_'), label: String(f.label).slice(0, 60), type: FIELD_TYPES.includes(f.type) ? f.type : 'text',
           })).slice(0, 12)
-          const created = await collectionsRepo.create({ name: String(c.name).slice(0, 60), slug: slug(c.slug || c.name), fields, ownership: c.ownership === 'own' ? 'own' : 'shared' })
+          const colSlug = uniqueSlug(slug(c.slug || c.name), takenColSlugs)
+          const created = await collectionsRepo.create({ name: String(c.name).slice(0, 60), slug: colSlug, fields, ownership: c.ownership === 'own' ? 'own' : 'shared' })
           collectionMap[created.slug] = created.id
-          if (c.slug) collectionMap[slug(c.slug)] = created.id
+          if (c.slug) collectionMap[slug(c.slug)] = created.id            // resolve widget refs by the AI's slug
+          collectionMap[slug(c.name)] = created.id
           createdCollections.push(created.name)
           send({ step: 'collection', message: `Created collection: ${created.name}${c.ownership === 'own' ? ' (per-member)' : ''}` })
         }
 
-        // 2) Pages
-        const usedSlugs = new Set<string>()
+        // 2) Pages — seed with existing page slugs so we never collide with the live site.
+        const usedSlugs = new Set((await pagesRepo.list()).map((p) => p.slug))
         let homeId = ''
         const created: { title: string; slug: string; home: boolean }[] = []
+        const slugRemap: Record<string, string> = {}   // AI's intended slug -> actual slug
         for (const p of Array.isArray(parsed?.pages) ? parsed.pages.slice(0, 8) : []) {
           if (!p?.title) continue
-          let s = slug(p.slug || p.title)
-          while (usedSlugs.has(s)) s = s + '-2'
-          usedSlugs.add(s)
+          const intended = slug(p.slug || p.title)
+          const s = uniqueSlug(intended, usedSlugs)
+          slugRemap[intended] = s
           const blocks = normalizeBlocks(p.blocks, { allow: SITE_WIDGETS, collectionMap })
           if (blocks.length === 0) continue
           const access = ACCESS.includes(p.access) ? p.access : 'public'
@@ -120,7 +131,13 @@ export async function POST(req: NextRequest) {
 
         // 3) Navigation + home + meta
         const navItems = (Array.isArray(parsed?.navigation?.items) ? parsed.navigation.items : [])
-          .filter((i: any) => i?.label && i?.href).map((i: any) => ({ label: String(i.label).slice(0, 40), href: String(i.href).slice(0, 120) })).slice(0, 8)
+          .filter((i: any) => i?.label && i?.href)
+          .map((i: any) => {
+            let href = String(i.href)
+            const m = href.match(/^\/([a-z0-9-]+)$/i)   // remap /old-slug -> /actual-slug if it changed
+            if (m && slugRemap[m[1].toLowerCase()]) href = `/${slugRemap[m[1].toLowerCase()]}`
+            return { label: String(i.label).slice(0, 40), href: href.slice(0, 120) }
+          }).slice(0, 8)
         const cta = parsed?.navigation?.cta
         await settingsRepo.upsertMany([
           { key: 'home_page_id', value: homeId },
