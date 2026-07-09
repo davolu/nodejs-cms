@@ -2,11 +2,12 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Save, ArrowLeft, Eye, Sparkles, Loader2 } from 'lucide-react'
+import { Save, ArrowLeft, Eye, Sparkles, Loader2, LayoutGrid, List } from 'lucide-react'
 import Link from 'next/link'
 import type { Page } from '@/lib/seed'
 import type { Block } from '@/lib/blocks'
 import BlockEditor from '@/components/BlockEditor'
+import VisualEditor from '@/components/VisualEditor'
 
 const slugify = (s: string) =>
   s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
@@ -20,6 +21,7 @@ export default function PageForm({ initial }: Props) {
   const [error, setError] = useState('')
   const [slugTouched, setSlugTouched] = useState(editing)
   const [blocks, setBlocks] = useState<Block[]>(initial?.blocks ?? [])
+  const [mode, setMode] = useState<'visual' | 'form'>('visual')
   const [form, setForm] = useState({
     title: initial?.title ?? '',
     slug: initial?.slug ?? '',
@@ -162,9 +164,31 @@ export default function PageForm({ initial }: Props) {
           <div>
             <div className="mb-2 flex items-center justify-between">
               <h3 className="text-sm font-semibold text-slate-900">Page content</h3>
-              <span className="text-xs text-slate-400">Drag the handle to reorder</span>
+              <div className="flex items-center gap-3">
+                <div className="flex rounded-lg border border-slate-200 bg-white p-0.5 text-sm">
+                  <button
+                    onClick={() => setMode('visual')}
+                    className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 font-medium transition-colors ${mode === 'visual' ? 'bg-brand-600 text-white' : 'text-slate-500 hover:text-slate-800'}`}
+                  >
+                    <LayoutGrid className="h-3.5 w-3.5" /> Visual
+                  </button>
+                  <button
+                    onClick={() => setMode('form')}
+                    className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 font-medium transition-colors ${mode === 'form' ? 'bg-brand-600 text-white' : 'text-slate-500 hover:text-slate-800'}`}
+                  >
+                    <List className="h-3.5 w-3.5" /> Form
+                  </button>
+                </div>
+                <span className="hidden text-xs text-slate-400 sm:inline">
+                  {mode === 'visual' ? 'Click to edit, drag to reorder' : 'Drag the handle to reorder'}
+                </span>
+              </div>
             </div>
-            <BlockEditor blocks={blocks} onChange={setBlocks} />
+            {mode === 'visual' ? (
+              <VisualEditor blocks={blocks} onChange={setBlocks} />
+            ) : (
+              <BlockEditor blocks={blocks} onChange={setBlocks} />
+            )}
           </div>
 
           <div className="card p-5">
