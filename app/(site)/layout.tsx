@@ -10,9 +10,17 @@ export const dynamic = 'force-dynamic'
 
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
   const [settings, pages, meta] = await Promise.all([settingsRepo.list(), pagesRepo.list(), getSiteMeta()])
-  const siteTitle = settings.find((s) => s.key === 'site_title')?.value || 'My Site'
-  const homeId = settings.find((s) => s.key === 'home_page_id')?.value
-  const nav = pages.filter((p) => p.status === 'published' && p.id !== homeId && p.slug !== 'home').slice(0, 5)
+  const get = (k: string) => settings.find((s) => s.key === k)?.value || ''
+  const siteTitle = get('site_title') || 'My Site'
+  const homeId = get('home_page_id')
+  const autoNav = pages.filter((p) => p.status === 'published' && p.id !== homeId && p.slug !== 'home').slice(0, 5).map((p) => ({ label: p.title, href: `/${p.slug}` }))
+  const parseLinks = (v: string) => { try { const p = JSON.parse(v); return Array.isArray(p) ? p as { label: string; href: string }[] : [] } catch { return [] } }
+  const customNav = parseLinks(get('nav_menu'))
+  const nav = customNav.length > 0 ? customNav : autoNav
+  const footerLinks = parseLinks(get('footer_links'))
+  const ctaLabel = get('header_cta_label') || 'Read the blog'
+  const ctaHref = get('header_cta_href') || '/blog'
+  const footerText = get('footer_text') || meta.description || 'Built with ContentHub CMS.'
   const initial = siteTitle.trim().charAt(0).toUpperCase() || 'M'
   const base = baseUrl(meta)
   const websiteLd = {
@@ -41,13 +49,13 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
           </Link>
 
           <nav className="hidden items-center gap-7 text-sm font-medium text-slate-600 sm:flex">
-            {nav.map((p) => (
-              <Link key={p.id} href={`/${p.slug}`} className="link-underline hover:text-slate-900">{p.title}</Link>
+            {nav.map((item, i) => (
+              <Link key={i} href={item.href} className="link-underline hover:text-slate-900">{item.label}</Link>
             ))}
             <Link href="/blog" className="link-underline hover:text-slate-900">Blog</Link>
           </nav>
 
-          <Link href="/blog" className="cta !px-5 !py-2 text-xs">Read the blog</Link>
+          <Link href={ctaHref} className="cta !px-5 !py-2 text-xs">{ctaLabel}</Link>
         </div>
       </header>
 
@@ -64,13 +72,13 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
                 <span className="site-heading text-lg font-bold tracking-tight">{siteTitle}</span>
               </div>
               <p className="mt-4 text-sm leading-relaxed text-slate-500">
-                {settings.find((s) => s.key === 'site_description')?.value || 'Built with ContentHub CMS.'}
+                {footerText}
               </p>
             </div>
             <nav className="flex flex-col gap-2.5 text-sm text-slate-500">
               <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Pages</span>
-              {nav.map((p) => (
-                <Link key={p.id} href={`/${p.slug}`} className="hover:text-slate-900">{p.title}</Link>
+              {(footerLinks.length > 0 ? footerLinks : nav).map((item, i) => (
+                <Link key={i} href={item.href} className="hover:text-slate-900">{item.label}</Link>
               ))}
               <Link href="/blog" className="hover:text-slate-900">Blog</Link>
             </nav>
