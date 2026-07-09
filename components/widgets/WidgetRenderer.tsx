@@ -242,6 +242,8 @@ export default function WidgetRenderer({ block }: { block: Block }) {
       return <GlobalPlaceholder blockId={p.blockId} />
     case 'collection':
       return <CollectionList p={p} />
+    case 'collection_form':
+      return <CollectionForm p={p} />
     case 'plans':
       return <PlansWidget p={p} />
     case 'app_youtube':
@@ -657,6 +659,53 @@ function PlansWidget({ p }: { p: any }) {
           ))}
         </div>
       </div>
+    </section>
+  )
+}
+
+function CollectionForm({ p }: { p: any }) {
+  const [fields, setFields] = useState<any[]>([])
+  const [values, setValues] = useState<Record<string, any>>({})
+  const [state, setState] = useState<'idle' | 'sending' | 'done' | 'signin' | 'error'>('idle')
+  useEffect(() => {
+    if (!p.collectionId) return
+    fetch(`/api/collections/${p.collectionId}`).then((r) => (r.ok ? r.json() : null)).then((c) => setFields(c?.fields || [])).catch(() => {})
+  }, [p.collectionId])
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault()
+    setState('sending')
+    const res = await fetch('/api/entries/submit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ collection: p.collectionId, data: values }) })
+    if (res.status === 401) return setState('signin')
+    if (!res.ok) return setState('error')
+    setValues({}); setState('done')
+  }
+
+  if (!p.collectionId) return <div className="px-6 py-10 text-center text-sm text-slate-400">Pick a collection in the widget settings.</div>
+  if (state === 'done') return (
+    <section className="px-6 py-10"><div className="mx-auto max-w-lg rounded-2xl bg-emerald-50 p-6 text-center text-emerald-700">{p.success || 'Thanks — submitted!'}</div></section>
+  )
+  return (
+    <section className="px-6 py-10">
+      <form onSubmit={submit} className="mx-auto max-w-lg space-y-4">
+        {p.heading && <h2 className="site-heading text-2xl font-bold text-slate-900">{p.heading}</h2>}
+        {fields.map((f) => (
+          <div key={f.key}>
+            <label className="mb-1 block text-sm font-medium text-slate-600">{f.label}</label>
+            {f.type === 'textarea' ? (
+              <textarea className="w-full rounded-xl border border-slate-200 px-3 py-2" rows={4} value={values[f.key] || ''} onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))} />
+            ) : f.type === 'boolean' ? (
+              <input type="checkbox" checked={!!values[f.key]} onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.checked }))} />
+            ) : (
+              <input type={f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : f.type === 'url' ? 'url' : 'text'} className="w-full rounded-xl border border-slate-200 px-3 py-2"
+                value={values[f.key] || ''} onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))} />
+            )}
+          </div>
+        ))}
+        {state === 'signin' && <p className="text-sm text-amber-600">Please sign in to submit. Add a Login widget or sign in first.</p>}
+        {state === 'error' && <p className="text-sm text-red-600">Something went wrong. Try again.</p>}
+        <button type="submit" disabled={state === 'sending'} className="rounded-full px-5 py-2.5 text-sm font-semibold text-white" style={grad}>{state === 'sending' ? 'Submitting…' : (p.button || 'Submit')}</button>
+      </form>
     </section>
   )
 }

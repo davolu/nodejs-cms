@@ -64,6 +64,9 @@ export const WIDGETS: WidgetDef[] = [
   { type: 'collection', label: 'Collection', category: 'Content', icon: 'Database', kind: 'collection',
     defaults: { heading: '', collectionId: '', columns: '3' },
     fields: [txt('heading', 'Heading (optional)'), { key: 'collectionId', label: 'Collection', type: 'collection' }, { key: 'columns', label: 'Columns', type: 'select', options: ['2', '3', '4'] }] },
+  { type: 'collection_form', label: 'Collection Form', category: 'Forms', icon: 'FilePlus', kind: 'collection_form',
+    defaults: { heading: 'Submit', collectionId: '', button: 'Submit', success: 'Thanks — submitted!' },
+    fields: [txt('heading', 'Heading (optional)'), { key: 'collectionId', label: 'Collection', type: 'collection' }, txt('button', 'Button label'), txt('success', 'Success message')] },
 
   // ── Media ──
   { type: 'gallery', label: 'Gallery', category: 'Media', icon: 'Images', kind: 'gallery',

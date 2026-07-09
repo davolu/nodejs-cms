@@ -449,6 +449,7 @@ export const ordersRepo = {
 const toCollection = (r: any): Collection => ({
   id: r.id, name: r.name, slug: r.slug,
   fields: Array.isArray(r.fields) ? r.fields : (typeof r.fields === 'string' ? JSON.parse(r.fields || '[]') : []),
+  ownership: r.ownership === 'own' ? 'own' : 'shared',
   createdAt: new Date(r.created_at).toISOString(),
 })
 export const collectionsRepo = {
@@ -461,15 +462,15 @@ export const collectionsRepo = {
     return mem.collections.find((c) => c.id === id || c.slug === id) ?? null
   },
   async create(input: Partial<Collection>): Promise<Collection> {
-    const c: Collection = { id: newId('col'), name: input.name || 'Untitled', slug: input.slug || slugify(input.name || 'collection'), fields: input.fields || [], createdAt: now() }
-    if (hasDb()) await query('INSERT INTO collections (id,name,slug,fields,created_at) VALUES ($1,$2,$3,$4,$5)', [c.id, c.name, c.slug, JSON.stringify(c.fields), c.createdAt])
+    const c: Collection = { id: newId('col'), name: input.name || 'Untitled', slug: input.slug || slugify(input.name || 'collection'), fields: input.fields || [], ownership: input.ownership === 'own' ? 'own' : 'shared', createdAt: now() }
+    if (hasDb()) await query('INSERT INTO collections (id,name,slug,fields,ownership,created_at) VALUES ($1,$2,$3,$4,$5,$6)', [c.id, c.name, c.slug, JSON.stringify(c.fields), c.ownership, c.createdAt])
     else mem.collections.unshift(c)
     return c
   },
   async update(id: string, input: Partial<Collection>): Promise<Collection | null> {
     const existing = await this.get(id); if (!existing) return null
     const m: Collection = { ...existing, ...input, id }
-    if (hasDb()) await query('UPDATE collections SET name=$2,slug=$3,fields=$4 WHERE id=$1', [id, m.name, m.slug, JSON.stringify(m.fields)])
+    if (hasDb()) await query('UPDATE collections SET name=$2,slug=$3,fields=$4,ownership=$5 WHERE id=$1', [id, m.name, m.slug, JSON.stringify(m.fields), m.ownership])
     else { const i = mem.collections.findIndex((x) => x.id === id); mem.collections[i] = m }
     return m
   },
@@ -481,16 +482,18 @@ export const collectionsRepo = {
 }
 
 const toEntry = (r: any): Entry => ({
-  id: r.id, collectionId: r.collection_id, title: r.title, slug: r.slug,
+  id: r.id, collectionId: r.collection_id, owner: r.owner || '', title: r.title, slug: r.slug,
   data: typeof r.data === 'string' ? JSON.parse(r.data || '{}') : (r.data || {}),
   status: r.status, updatedAt: new Date(r.updated_at).toISOString(), createdAt: new Date(r.created_at).toISOString(),
 })
 export const entriesRepo = {
-  async listByCollection(collectionId: string, onlyPublished = false): Promise<Entry[]> {
+  async listByCollection(collectionId: string, onlyPublished = false, owner?: string): Promise<Entry[]> {
     let rows: Entry[]
     if (hasDb()) rows = (await query('SELECT * FROM entries WHERE collection_id=$1 ORDER BY created_at DESC', [collectionId])).map(toEntry)
     else rows = mem.entries.filter((e) => e.collectionId === collectionId).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-    return onlyPublished ? rows.filter((e) => e.status === 'published') : rows
+    if (onlyPublished) rows = rows.filter((e) => e.status === 'published')
+    if (owner !== undefined) rows = rows.filter((e) => e.owner === owner)
+    return rows
   },
   async get(id: string): Promise<Entry | null> {
     if (hasDb()) { const r = await query('SELECT * FROM entries WHERE id=$1', [id]); return r[0] ? toEntry(r[0]) : null }
@@ -498,19 +501,19 @@ export const entriesRepo = {
   },
   async create(input: Partial<Entry>): Promise<Entry> {
     const e: Entry = {
-      id: newId('ent'), collectionId: input.collectionId!, title: input.title || 'Untitled',
+      id: newId('ent'), collectionId: input.collectionId!, owner: input.owner || '', title: input.title || 'Untitled',
       slug: input.slug || slugify(input.title || 'entry'), data: input.data || {},
       status: (input.status as 'draft' | 'published') || 'published', updatedAt: now(), createdAt: now(),
     }
-    if (hasDb()) await query('INSERT INTO entries (id,collection_id,title,slug,data,status,updated_at,created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
-      [e.id, e.collectionId, e.title, e.slug, JSON.stringify(e.data), e.status, e.updatedAt, e.createdAt])
+    if (hasDb()) await query('INSERT INTO entries (id,collection_id,owner,title,slug,data,status,updated_at,created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)',
+      [e.id, e.collectionId, e.owner, e.title, e.slug, JSON.stringify(e.data), e.status, e.updatedAt, e.createdAt])
     else mem.entries.unshift(e)
     return e
   },
   async update(id: string, input: Partial<Entry>): Promise<Entry | null> {
     const existing = await this.get(id); if (!existing) return null
     const m: Entry = { ...existing, ...input, id, updatedAt: now() }
-    if (hasDb()) await query('UPDATE entries SET title=$2,slug=$3,data=$4,status=$5,updated_at=$6 WHERE id=$1', [id, m.title, m.slug, JSON.stringify(m.data), m.status, m.updatedAt])
+    if (hasDb()) await query('UPDATE entries SET title=$2,slug=$3,data=$4,status=$5,owner=$6,updated_at=$7 WHERE id=$1', [id, m.title, m.slug, JSON.stringify(m.data), m.status, m.owner, m.updatedAt])
     else { const i = mem.entries.findIndex((x) => x.id === id); mem.entries[i] = m }
     return m
   },

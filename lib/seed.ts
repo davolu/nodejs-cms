@@ -59,11 +59,13 @@ export interface Collection {
   name: string
   slug: string
   fields: CollectionField[]
+  ownership: 'shared' | 'own'
   createdAt: string
 }
 export interface Entry {
   id: string
   collectionId: string
+  owner: string
   title: string
   slug: string
   data: Record<string, any>
@@ -80,12 +82,13 @@ export const seedCollections: Collection[] = [
       { key: 'summary', label: 'Summary', type: 'textarea' },
       { key: 'link', label: 'Link', type: 'url' },
     ],
+    ownership: 'shared',
     createdAt: new Date('2026-01-06').toISOString(),
   },
 ]
 export const seedEntries: Entry[] = [
-  { id: 'ent_1', collectionId: 'col_projects', title: 'Acme Redesign', slug: 'acme-redesign', data: { image: 'https://picsum.photos/seed/proj1/800/600', summary: 'A full brand and website refresh.', link: '#' }, status: 'published', updatedAt: new Date('2026-01-07').toISOString(), createdAt: new Date('2026-01-07').toISOString() },
-  { id: 'ent_2', collectionId: 'col_projects', title: 'Mobile App Launch', slug: 'mobile-app-launch', data: { image: 'https://picsum.photos/seed/proj2/800/600', summary: 'Shipped an iOS + Android app in 8 weeks.', link: '#' }, status: 'published', updatedAt: new Date('2026-01-06').toISOString(), createdAt: new Date('2026-01-06').toISOString() },
+  { id: 'ent_1', collectionId: 'col_projects', owner: '', title: 'Acme Redesign', slug: 'acme-redesign', data: { image: 'https://picsum.photos/seed/proj1/800/600', summary: 'A full brand and website refresh.', link: '#' }, status: 'published', updatedAt: new Date('2026-01-07').toISOString(), createdAt: new Date('2026-01-07').toISOString() },
+  { id: 'ent_2', collectionId: 'col_projects', owner: '', title: 'Mobile App Launch', slug: 'mobile-app-launch', data: { image: 'https://picsum.photos/seed/proj2/800/600', summary: 'Shipped an iOS + Android app in 8 weeks.', link: '#' }, status: 'published', updatedAt: new Date('2026-01-06').toISOString(), createdAt: new Date('2026-01-06').toISOString() },
 ]
 
 export const seedGlobalBlocks: GlobalBlock[] = [

@@ -6,7 +6,7 @@ import { Plus, Pencil, Trash2, Database, X, ChevronUp, ChevronDown } from 'lucid
 import { PageHeader, EmptyState } from '@/components/ui'
 
 interface Field { key: string; label: string; type: string }
-interface Collection { id: string; name: string; slug: string; fields: Field[] }
+interface Collection { id: string; name: string; slug: string; fields: Field[]; ownership?: 'shared' | 'own' }
 const FIELD_TYPES = ['text', 'textarea', 'image', 'url', 'number', 'date', 'boolean']
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '')
 
@@ -16,16 +16,17 @@ export default function CollectionsPage() {
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<Collection | null>(null)
   const [name, setName] = useState('')
+  const [ownership, setOwnership] = useState<'shared' | 'own'>('shared')
   const [fields, setFields] = useState<Field[]>([])
 
   async function load() { const r = await fetch('/api/collections', { cache: 'no-store' }); setItems(r.ok ? await r.json() : []); setLoading(false) }
   useEffect(() => { load() }, [])
 
-  function startNew() { setEditing(null); setName(''); setFields([{ key: 'summary', label: 'Summary', type: 'textarea' }]); setOpen(true) }
-  function startEdit(c: Collection) { setEditing(c); setName(c.name); setFields(c.fields); setOpen(true) }
+  function startNew() { setEditing(null); setName(''); setOwnership('shared'); setFields([{ key: 'summary', label: 'Summary', type: 'textarea' }]); setOpen(true) }
+  function startEdit(c: Collection) { setEditing(c); setName(c.name); setOwnership(c.ownership || 'shared'); setFields(c.fields); setOpen(true) }
 
   async function save() {
-    const payload = { name, fields: fields.filter((f) => f.label).map((f) => ({ ...f, key: f.key || slugify(f.label) })) }
+    const payload = { name, ownership, fields: fields.filter((f) => f.label).map((f) => ({ ...f, key: f.key || slugify(f.label) })) }
     if (editing) await fetch(`/api/collections/${editing.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
     else await fetch('/api/collections', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
     setOpen(false); load()
@@ -72,6 +73,11 @@ export default function CollectionsPage() {
             </div>
             <label className="label">Name</label>
             <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Projects" />
+            <label className="label mt-3">Who owns entries</label>
+            <select className="input" value={ownership} onChange={(e) => setOwnership(e.target.value as 'shared' | 'own')}>
+              <option value="shared">Shared — everyone sees all entries</option>
+              <option value="own">Per-member — each member sees only their own (managers/admins see all)</option>
+            </select>
 
             <div className="mt-4 mb-1 text-sm font-semibold text-slate-900">Fields</div>
             <p className="mb-2 text-xs text-slate-400">Every entry also has a Title and Slug automatically.</p>

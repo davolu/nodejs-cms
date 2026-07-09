@@ -116,6 +116,8 @@ CREATE TABLE IF NOT EXISTS entries (
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+ALTER TABLE collections ADD COLUMN IF NOT EXISTS ownership TEXT NOT NULL DEFAULT 'shared';
+ALTER TABLE entries ADD COLUMN IF NOT EXISTS owner TEXT NOT NULL DEFAULT '';
 CREATE INDEX IF NOT EXISTS idx_entries_collection ON entries(collection_id);
 
 
