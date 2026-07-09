@@ -2,9 +2,10 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Save, ArrowLeft, ImagePlus, Eye } from 'lucide-react'
+import { Save, ArrowLeft, ImagePlus, Eye, Sparkles, Loader2, Wand2 } from 'lucide-react'
 import Link from 'next/link'
 import type { Post } from '@/lib/seed'
+import MediaInput from '@/components/media/MediaInput'
 
 const slugify = (s: string) =>
   s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
@@ -17,6 +18,9 @@ export default function PostForm({ initial }: Props) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [slugTouched, setSlugTouched] = useState(editing)
+  const [aiBusy, setAiBusy] = useState<string>('')
+  const [aiError, setAiError] = useState('')
+  const [titleIdeas, setTitleIdeas] = useState<string[]>([])
   const [form, setForm] = useState({
     title: initial?.title ?? '',
     slug: initial?.slug ?? '',
@@ -29,6 +33,24 @@ export default function PostForm({ initial }: Props) {
   })
 
   const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }))
+
+  async function ai(action: string) {
+    setAiBusy(action); setAiError('')
+    try {
+      const res = await fetch('/api/ai/assist', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, text: form.body, title: form.title }),
+      })
+      const d = await res.json()
+      if (!res.ok) { setAiError(d.error || 'AI request failed.'); return }
+      if (action === 'seo') { setForm((f) => ({ ...f, metaTitle: d.metaTitle || f.metaTitle, metaDescription: d.metaDescription || f.metaDescription })) }
+      else if (action === 'titles') { setTitleIdeas(Array.isArray(d.titles) ? d.titles : []) }
+      else if (action === 'excerpt') { set('excerpt', d.result || '') }
+      else { set('body', d.result || form.body) } // draft/improve/shorten/expand
+    } catch { setAiError('AI request failed.') }
+    finally { setAiBusy('') }
+  }
+
 
   function onTitle(v: string) {
     set('title', v)
@@ -88,23 +110,48 @@ export default function PostForm({ initial }: Props) {
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
           <div className="card p-5">
-            <label className="label">Title</label>
+            <div className="flex items-center justify-between">
+              <label className="label">Title</label>
+              <AiBtn label="Suggest titles" action="titles" busy={aiBusy} onClick={() => ai('titles')} />
+            </div>
             <input className="input" value={form.title} onChange={(e) => onTitle(e.target.value)} placeholder="e.g. Introducing ContentHub" />
+            {titleIdeas.length > 0 && (
+              <div className="mt-2 space-y-1 rounded-lg bg-brand-50/60 p-2">
+                {titleIdeas.map((t, i) => (
+                  <button key={i} onClick={() => { onTitle(t); setTitleIdeas([]) }} className="block w-full rounded px-2 py-1 text-left text-sm text-slate-700 hover:bg-white">{t}</button>
+                ))}
+              </div>
+            )}
 
-            <label className="label mt-4">Excerpt</label>
+            <div className="mt-4 flex items-center justify-between">
+              <label className="label">Excerpt</label>
+              <AiBtn label="Generate" action="excerpt" busy={aiBusy} onClick={() => ai('excerpt')} />
+            </div>
             <textarea className="input min-h-[70px]" value={form.excerpt} onChange={(e) => set('excerpt', e.target.value)} placeholder="A one or two sentence summary shown in listings." />
 
-            <label className="label mt-4">Content</label>
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+              <label className="label !mb-0">Content</label>
+              <div className="flex flex-wrap gap-1.5">
+                <AiBtn label="Write draft" action="draft" busy={aiBusy} onClick={() => ai('draft')} primary />
+                <AiBtn label="Improve" action="improve" busy={aiBusy} onClick={() => ai('improve')} />
+                <AiBtn label="Shorten" action="shorten" busy={aiBusy} onClick={() => ai('shorten')} />
+                <AiBtn label="Expand" action="expand" busy={aiBusy} onClick={() => ai('expand')} />
+              </div>
+            </div>
             <textarea
-              className="input min-h-[220px] font-mono text-[13px] leading-relaxed"
+              className="input mt-1 min-h-[220px] font-mono text-[13px] leading-relaxed"
               value={form.body}
               onChange={(e) => set('body', e.target.value)}
-              placeholder="Write your post here…"
+              placeholder="Write your post here… or let AI draft it from the title."
             />
+            {aiError && <p className="mt-2 text-sm text-red-600">{aiError}</p>}
           </div>
 
           <div className="card p-5">
-            <h3 className="mb-3 text-sm font-semibold text-slate-900">SEO</h3>
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-slate-900">SEO</h3>
+              <AiBtn label="Generate SEO" action="seo" busy={aiBusy} onClick={() => ai('seo')} />
+            </div>
             <label className="label">Meta title</label>
             <input className="input" value={form.metaTitle} onChange={(e) => set('metaTitle', e.target.value)} />
             <label className="label mt-4">Meta description</label>
@@ -143,11 +190,27 @@ export default function PostForm({ initial }: Props) {
                 <ImagePlus className="h-6 w-6" />
               </div>
             )}
-            <input className="input" value={form.featuredImage} onChange={(e) => set('featuredImage', e.target.value)} placeholder="https://…/image.jpg" />
-            <p className="field-hint">Paste an image URL, or pick one from the Media library.</p>
+            <MediaInput value={form.featuredImage} onChange={(v) => set('featuredImage', v)} />
+            <p className="field-hint">Paste an image URL, upload, or pick from the Media library.</p>
           </div>
         </div>
       </div>
     </div>
+  )
+}
+
+function AiBtn({ label, action, busy, onClick, primary }: { label: string; action: string; busy: string; onClick: () => void; primary?: boolean }) {
+  const isBusy = busy === action
+  const anyBusy = busy !== ''
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={anyBusy}
+      className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors disabled:opacity-50 ${primary ? 'border-brand-300 bg-brand-50 text-brand-700 hover:bg-brand-100' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+    >
+      {isBusy ? <Loader2 className="h-3 w-3 animate-spin" /> : primary ? <Wand2 className="h-3 w-3" /> : <Sparkles className="h-3 w-3" />}
+      {label}
+    </button>
   )
 }
