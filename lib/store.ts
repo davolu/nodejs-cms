@@ -1,7 +1,8 @@
 import { hasDb, query } from './db'
+import type { Block } from './blocks'
 import {
-  Page, Post, MediaItem, Setting, Submission, User, Product, Order,
-  seedPages, seedPosts, seedMedia, seedSettings, seedSubmissions, seedUsers, seedProducts,
+  Page, Post, MediaItem, Setting, Submission, User, Product, Order, GlobalBlock,
+  seedPages, seedPosts, seedMedia, seedSettings, seedSubmissions, seedUsers, seedProducts, seedGlobalBlocks,
 } from './seed'
 
 // ── In-memory fallback stores (deep-cloned so mutations don't touch the seed) ──
@@ -14,6 +15,7 @@ const mem = {
   users: seedUsers.map((x) => ({ ...x })),
   products: seedProducts.map((x) => ({ ...x })),
   orders: [] as Order[],
+  globalBlocks: seedGlobalBlocks.map((x) => ({ ...x })),
 }
 
 const now = () => new Date().toISOString()
@@ -427,6 +429,59 @@ export const ordersRepo = {
     if (hasDb()) await query('UPDATE orders SET status=$2 WHERE id=$1', [id, 'paid'])
     else { const o = mem.orders.find((x) => x.id === id); if (o) o.status = 'paid' }
   },
+}
+
+// ────────────────────────────  GLOBAL BLOCKS  ──────────────────────
+const toGlobalBlock = (r: any): GlobalBlock => ({
+  id: r.id, name: r.name,
+  blocks: Array.isArray(r.blocks) ? r.blocks : (typeof r.blocks === 'string' ? JSON.parse(r.blocks || '[]') : []),
+  updatedAt: new Date(r.updated_at).toISOString(), createdAt: new Date(r.created_at).toISOString(),
+})
+export const globalBlocksRepo = {
+  async list(): Promise<GlobalBlock[]> {
+    if (hasDb()) return (await query('SELECT * FROM global_blocks ORDER BY name')).map(toGlobalBlock)
+    return [...mem.globalBlocks].sort((a, b) => a.name.localeCompare(b.name))
+  },
+  async get(id: string): Promise<GlobalBlock | null> {
+    if (hasDb()) { const r = await query('SELECT * FROM global_blocks WHERE id=$1', [id]); return r[0] ? toGlobalBlock(r[0]) : null }
+    return mem.globalBlocks.find((g) => g.id === id) ?? null
+  },
+  async create(input: { name?: string; blocks?: Block[] }): Promise<GlobalBlock> {
+    const g: GlobalBlock = { id: newId('gb'), name: input.name || 'Untitled block', blocks: input.blocks || [], updatedAt: now(), createdAt: now() }
+    if (hasDb()) await query('INSERT INTO global_blocks (id,name,blocks,updated_at,created_at) VALUES ($1,$2,$3,$4,$5)',
+      [g.id, g.name, JSON.stringify(g.blocks), g.updatedAt, g.createdAt])
+    else mem.globalBlocks.unshift(g)
+    return g
+  },
+  async update(id: string, input: { name?: string; blocks?: Block[] }): Promise<GlobalBlock | null> {
+    const existing = await this.get(id); if (!existing) return null
+    const m: GlobalBlock = { ...existing, ...input, id, updatedAt: now() }
+    if (hasDb()) await query('UPDATE global_blocks SET name=$2,blocks=$3,updated_at=$4 WHERE id=$1',
+      [id, m.name, JSON.stringify(m.blocks), m.updatedAt])
+    else { const i = mem.globalBlocks.findIndex((x) => x.id === id); mem.globalBlocks[i] = m }
+    return m
+  },
+  async remove(id: string): Promise<boolean> {
+    if (hasDb()) return (await query('DELETE FROM global_blocks WHERE id=$1 RETURNING id', [id])).length > 0
+    const i = mem.globalBlocks.findIndex((g) => g.id === id); if (i === -1) return false; mem.globalBlocks.splice(i, 1); return true
+  },
+}
+
+// Replace any "globalblock" reference blocks with the referenced block's contents,
+// so pages render reusable sections inline. Depth-guarded against cycles.
+export async function expandGlobals(blocks: Block[], depth = 0): Promise<Block[]> {
+  if (!Array.isArray(blocks) || depth > 4) return blocks || []
+  const out: Block[] = []
+  for (const b of blocks) {
+    if (b.type === 'globalblock') {
+      const id = b.props?.blockId
+      const gb = id ? await globalBlocksRepo.get(id) : null
+      if (gb) out.push(...(await expandGlobals(gb.blocks, depth + 1)))
+    } else {
+      out.push(b)
+    }
+  }
+  return out
 }
 
 // Resolve which page should render at "/" — the configured home page, falling

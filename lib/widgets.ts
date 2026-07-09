@@ -4,7 +4,7 @@
 // The 9 original blocks (hero/heading/paragraph/image/button/quote/features/stats/cta)
 // stay bespoke; everything here is rendered by WidgetRenderer and edited generically.
 
-export type FieldType = 'text' | 'textarea' | 'url' | 'select' | 'number' | 'items'
+export type FieldType = 'text' | 'textarea' | 'url' | 'select' | 'number' | 'items' | 'globalblock'
 export interface Field {
   key: string
   label: string
@@ -36,6 +36,9 @@ export const WIDGETS: WidgetDef[] = [
   { type: 'columns', label: 'Two Columns', category: 'Layout', icon: 'Columns2', kind: 'columns',
     defaults: { heading: '', colA: 'Left column text.', colB: 'Right column text.' },
     fields: [txt('heading', 'Heading (optional)'), area('colA', 'Left column'), area('colB', 'Right column')] },
+  { type: 'globalblock', label: 'Global Block', category: 'Layout', icon: 'Blocks', kind: 'global',
+    defaults: { blockId: '' },
+    fields: [{ key: 'blockId', label: 'Reusable block', type: 'globalblock' }] },
 
   // ── Content ──
   { type: 'list', label: 'List', category: 'Content', icon: 'List', kind: 'list',

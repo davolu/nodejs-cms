@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import {
   ArrowRight, Check, Info, CircleCheck, TriangleAlert, CircleAlert, Sparkle, ChevronDown, ChevronLeft, ChevronRight,
-  Twitter, Facebook, Instagram, Linkedin, Youtube, Github, UserRound, LogOut,
+  Twitter, Facebook, Instagram, Linkedin, Youtube, Github, UserRound, LogOut, Blocks,
 } from 'lucide-react'
 import type { Block } from '@/lib/blocks'
 import Reveal from '@/components/site/Reveal'
@@ -237,6 +237,8 @@ export default function WidgetRenderer({ block }: { block: Block }) {
       return <AuthForm p={p} />
     case 'products':
       return <ProductGrid p={p} />
+    case 'global':
+      return <GlobalPlaceholder blockId={p.blockId} />
     case 'faq':
       return <Faq heading={p.heading} items={p.items || []} />
     case 'tabs':
@@ -382,6 +384,25 @@ function FormWidget({ p }: { p: any }) {
 }
 
 interface ShopProduct { id: string; name: string; description: string; price: number; currency: string; image: string }
+function GlobalPlaceholder({ blockId }: { blockId?: string }) {
+  const [name, setName] = useState<string>('')
+  useEffect(() => {
+    if (!blockId) return
+    fetch(`/api/blocks/${blockId}`).then((r) => (r.ok ? r.json() : null)).then((d) => d && setName(d.name)).catch(() => {})
+  }, [blockId])
+  return (
+    <div className="mx-auto max-w-3xl px-6 py-8">
+      <div className="flex items-center gap-3 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-5 py-6 text-slate-500">
+        <span className="grid h-9 w-9 place-items-center rounded-lg text-white" style={grad}><Blocks className="h-5 w-5" /></span>
+        <div>
+          <div className="text-sm font-semibold text-slate-700">Global block{name ? `: ${name}` : ''}</div>
+          <div className="text-xs">{blockId ? 'Renders here on the live page. Edit it under Blocks.' : 'Pick a reusable block in settings.'}</div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function ProductGrid({ p }: { p: any }) {
   const cart = useCart()
   const [products, setProducts] = useState<ShopProduct[]>([])

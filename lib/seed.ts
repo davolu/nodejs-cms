@@ -44,6 +44,26 @@ export interface Submission {
   createdAt: string
 }
 
+export interface GlobalBlock {
+  id: string
+  name: string
+  blocks: Block[]
+  updatedAt: string
+  createdAt: string
+}
+
+export const seedGlobalBlocks: GlobalBlock[] = [
+  {
+    id: 'gb_cta',
+    name: 'Newsletter CTA',
+    blocks: [
+      { id: 'gbb1', type: 'cta', variant: 'brand', heading: 'Subscribe to our newsletter', label: 'Subscribe', href: '#' },
+    ],
+    updatedAt: new Date('2026-01-10').toISOString(),
+    createdAt: new Date('2026-01-10').toISOString(),
+  },
+]
+
 export interface User {
   id: string
   email: string

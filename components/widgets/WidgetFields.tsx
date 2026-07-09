@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { Plus, X } from 'lucide-react'
 import type { Block } from '@/lib/blocks'
 import { widgetDef, Field } from '@/lib/widgets'
@@ -25,6 +26,20 @@ export default function WidgetFields({ block, onUpdate }: { block: Block; onUpda
   )
 }
 
+function GlobalBlockPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [items, setItems] = useState<{ id: string; name: string }[]>([])
+  useEffect(() => { fetch('/api/blocks').then((r) => r.json()).then((d) => setItems(Array.isArray(d) ? d : [])).catch(() => {}) }, [])
+  return (
+    <div>
+      <select className="input" value={value} onChange={(e) => onChange(e.target.value)}>
+        <option value="">— Choose a reusable block —</option>
+        {items.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+      </select>
+      <p className="mt-1 text-xs text-slate-400">Manage reusable blocks under <span className="font-medium">Blocks</span> in the admin.</p>
+    </div>
+  )
+}
+
 function FieldInput({ field: f, value, onChange }: { field: Field; value: any; onChange: (v: any) => void }) {
   if (f.type === 'textarea') return <textarea className="input min-h-[60px]" value={value ?? ''} onChange={(e) => onChange(e.target.value)} placeholder={f.placeholder} />
   if (f.type === 'select') return (
@@ -34,6 +49,7 @@ function FieldInput({ field: f, value, onChange }: { field: Field; value: any; o
   )
   if (f.type === 'number') return <input type="number" className="input" value={value ?? 0} onChange={(e) => onChange(Number(e.target.value))} />
   if (f.type === 'url') return <MediaInput value={value ?? ''} onChange={onChange} placeholder={f.placeholder} />
+  if (f.type === 'globalblock') return <GlobalBlockPicker value={value ?? ''} onChange={onChange} />
   if (f.type === 'items') return <ItemsEditor field={f} value={Array.isArray(value) ? value : []} onChange={onChange} />
   return <input className="input" value={value ?? ''} onChange={(e) => onChange(e.target.value)} placeholder={f.placeholder} />
 }

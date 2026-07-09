@@ -88,6 +88,15 @@ CREATE TABLE IF NOT EXISTS orders (
 );
 CREATE INDEX IF NOT EXISTS idx_orders_created ON orders(created_at DESC);
 
+
+CREATE TABLE IF NOT EXISTS global_blocks (
+  id         TEXT PRIMARY KEY,
+  name       TEXT NOT NULL,
+  blocks     JSONB NOT NULL DEFAULT '[]'::jsonb,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 CREATE TABLE IF NOT EXISTS users (
   id            TEXT PRIMARY KEY,
   email         TEXT NOT NULL UNIQUE,

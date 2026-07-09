@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
-import { pagesRepo } from '@/lib/store'
+import { pagesRepo, expandGlobals } from '@/lib/store'
 import { getSiteMeta } from '@/lib/site-meta'
 import { isAuthed } from '@/lib/auth'
 import { getMemberId } from '@/lib/members'
@@ -42,6 +42,7 @@ export default async function PublicPage({
 
   const gated = page.access === 'members' && !getMemberId() && !isPreview
   const leadsWithHero = page.blocks[0]?.type === 'hero'
+  const blocks = await expandGlobals(page.blocks)
 
   return (
     <>
@@ -61,7 +62,7 @@ export default async function PublicPage({
               </div>
             </section>
           )}
-          <BlockRenderer blocks={page.blocks} theme={page.theme} />
+          <BlockRenderer blocks={blocks} theme={page.theme} />
         </>
       )}
     </>
