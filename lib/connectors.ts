@@ -9,9 +9,11 @@ export interface Connector {
   category: string
   brand: string                 // simple-icons slug (for the logo)
   description: string
-  auth?: 'oauth2' | 'apikey'    // default oauth2
+  auth?: 'oauth2' | 'apikey' | 'rest'   // default oauth2
   clientIdEnv?: string
   clientSecretEnv?: string
+  clientId?: string             // inline creds (custom UI-configured connectors)
+  clientSecret?: string
   apiKeyEnv?: string[]          // for apikey connectors (present == connected)
   authorizeUrl?: string
   tokenUrl?: string
@@ -25,6 +27,10 @@ export interface Connector {
   accountEmailPath?: string     // dot path into userinfo JSON
   accountNamePath?: string
   setupUrl?: string             // where the user creates the OAuth app / gets keys
+  custom?: boolean              // added via the UI (stored in settings)
+  baseUrl?: string              // REST connector base URL
+  restAuthHeader?: string       // REST auth header name (e.g. Authorization)
+  restAuthValue?: string        // REST auth header value (e.g. Bearer xxx)
 }
 
 const GOOGLE = {
@@ -175,9 +181,13 @@ export const CONNECTORS: Connector[] = [
 export const CONNECTOR_MAP: Record<string, Connector> = Object.fromEntries(CONNECTORS.map((c) => [c.id, c]))
 export function getConnector(id: string): Connector | undefined { return CONNECTOR_MAP[id] }
 
-// A connector is "configured" when its credentials are present in the environment.
+// A connector is "configured" when its credentials are present.
 export function connectorConfigured(c: Connector): boolean {
   if (c.auth === 'apikey') return (c.apiKeyEnv || []).every((e) => !!process.env[e])
-  return !!(c.clientIdEnv && process.env[c.clientIdEnv] && c.clientSecretEnv && process.env[c.clientSecretEnv])
+  if (c.auth === 'rest') return !!c.baseUrl
+  const cid = c.clientId || (c.clientIdEnv ? process.env[c.clientIdEnv] : '')
+  const csec = c.clientSecret || (c.clientSecretEnv ? process.env[c.clientSecretEnv] : '')
+  return !!(cid && csec)
 }
 export function isApiKey(c: Connector): boolean { return c.auth === 'apikey' }
+export function isRest(c: Connector): boolean { return c.auth === 'rest' }

@@ -31,7 +31,7 @@ export function pkcePair(): { verifier: string; challenge: string } {
 
 export function buildAuthUrl(c: Connector, redirectUri: string, state: string, challenge?: string): string {
   const p = new URLSearchParams({
-    client_id: process.env[c.clientIdEnv || ""] || '',
+    client_id: c.clientId || process.env[c.clientIdEnv || ''] || '',
     redirect_uri: redirectUri,
     response_type: 'code',
     state,
@@ -45,8 +45,8 @@ export function buildAuthUrl(c: Connector, redirectUri: string, state: string, c
 export interface TokenSet { access_token: string; refresh_token?: string; expires_in?: number; scope?: string; [k: string]: any }
 
 async function tokenRequest(c: Connector, params: Record<string, string>): Promise<TokenSet> {
-  const clientId = process.env[c.clientIdEnv || ""] || ''
-  const clientSecret = process.env[c.clientSecretEnv || ""] || ''
+  const clientId = c.clientId || process.env[c.clientIdEnv || ''] || ''
+  const clientSecret = c.clientSecret || process.env[c.clientSecretEnv || ''] || ''
   const headers: Record<string, string> = { 'content-type': 'application/x-www-form-urlencoded' }
   if (c.acceptJson) headers['accept'] = 'application/json'
 

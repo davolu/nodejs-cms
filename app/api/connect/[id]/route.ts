@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getConnector, connectorConfigured } from '@/lib/connectors'
+import { connectorConfigured } from '@/lib/connectors'
+import { resolveConnector } from '@/lib/custom-connectors'
 import { buildAuthUrl, signState, pkcePair } from '@/lib/oauth'
 import { isAuthed } from '@/lib/auth'
 import crypto from 'crypto'
@@ -9,7 +10,7 @@ export const dynamic = 'force-dynamic'
 // Starts the OAuth flow: redirect the admin to the provider's consent screen.
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   if (!isAuthed()) return NextResponse.redirect(new URL('/login', req.nextUrl.origin))
-  const c = getConnector(params.id)
+  const c = await resolveConnector(params.id)
   if (!c) return NextResponse.json({ error: 'Unknown connector' }, { status: 404 })
   if (!connectorConfigured(c)) {
     return NextResponse.redirect(new URL(`/admin/connectors?setup=${c.id}`, req.nextUrl.origin))

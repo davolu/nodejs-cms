@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getConnector } from '@/lib/connectors'
+import { resolveConnector } from '@/lib/custom-connectors'
 import { verifyState, exchangeCode, pick } from '@/lib/oauth'
 import { connectionsRepo } from '@/lib/store'
 import { isAuthed } from '@/lib/auth'
@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   if (!isAuthed()) return NextResponse.redirect(new URL('/login', req.nextUrl.origin))
-  const c = getConnector(params.id)
+  const c = await resolveConnector(params.id)
   if (!c) return NextResponse.json({ error: 'Unknown connector' }, { status: 404 })
 
   const sp = req.nextUrl.searchParams

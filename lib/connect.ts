@@ -1,20 +1,21 @@
-import { getConnector, connectorConfigured, isApiKey } from './connectors'
+import { connectorConfigured, isApiKey } from './connectors'
+import { resolveConnector } from './custom-connectors'
 import { refreshToken } from './oauth'
 import { connectionsRepo } from './store'
 
 // An app is usable when: API-key connectors have their env set; OAuth connectors
 // have completed the flow (a stored connection).
 export async function connectorConnected(id: string): Promise<boolean> {
-  const c = getConnector(id)
+  const c = await resolveConnector(id)
   if (!c) return false
-  if (isApiKey(c)) return connectorConfigured(c)
+  if (isApiKey(c) || c.auth === 'rest') return connectorConfigured(c)
   return !!(await connectionsRepo.get(id))
 }
 
 // Returns a valid access token for a connected app, refreshing it if expired.
 // Throws if the app isn't connected or can't be refreshed.
 export async function getValidToken(connectorId: string): Promise<string> {
-  const c = getConnector(connectorId)
+  const c = await resolveConnector(connectorId)
   if (!c) throw new Error('Unknown connector')
   const conn = await connectionsRepo.get(connectorId)
   if (!conn) throw new Error(`${c.name} is not connected`)

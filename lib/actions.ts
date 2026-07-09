@@ -241,6 +241,19 @@ export async function openaiComplete(input: { prompt: string; model?: string }) 
   return { text: data.choices?.[0]?.message?.content || '' }
 }
 
+// Generic REST request through a custom REST connector (base URL + auth header).
+export async function restRequest(c: { baseUrl?: string; restAuthHeader?: string; restAuthValue?: string }, input: { method?: string; path?: string; body?: any }) {
+  const method = (input.method || 'GET').toUpperCase()
+  const url = (c.baseUrl || '').replace(/\/$/, '') + (input.path || '')
+  const headers: Record<string, string> = { 'content-type': 'application/json' }
+  if (c.restAuthHeader && c.restAuthValue) headers[c.restAuthHeader] = c.restAuthValue
+  const resp = await fetch(url, { method, headers, body: method !== 'GET' && input.body != null ? JSON.stringify(input.body) : undefined })
+  const text = await resp.text()
+  let data: any; try { data = JSON.parse(text) } catch { data = text }
+  if (!resp.ok) throw new Error(`REST ${resp.status}: ${typeof data === 'string' ? data.slice(0, 120) : JSON.stringify(data).slice(0, 120)}`)
+  return data
+}
+
 // ── Action registry (for the generic /api/actions/[id] runner) ──
 export interface ActionDef { id: string; connector: string; label: string; run: (input: any) => Promise<any>; sample?: any }
 export const ACTIONS: ActionDef[] = [
