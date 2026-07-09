@@ -2,10 +2,18 @@ import type { Metadata } from 'next'
 import '@fontsource-variable/inter'
 import '@fontsource-variable/space-grotesk'
 import './globals.css'
+import { getSiteMeta, baseUrl } from '@/lib/site-meta'
 
-export const metadata: Metadata = {
-  title: 'ContentHub CMS',
-  description: 'A simple CMS for managing website pages and blog posts.',
+export async function generateMetadata(): Promise<Metadata> {
+  const meta = await getSiteMeta()
+  const base = baseUrl(meta)
+  return {
+    metadataBase: (() => { try { return new URL(base) } catch { return new URL('http://localhost:3000') } })(),
+    title: { default: meta.title, template: `%s · ${meta.title}` },
+    description: meta.description,
+    openGraph: { siteName: meta.title, type: 'website', images: meta.ogImage ? [meta.ogImage] : [] },
+    twitter: { card: 'summary_large_image', site: meta.twitter || undefined },
+  }
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

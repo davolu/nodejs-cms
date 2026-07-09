@@ -3,9 +3,11 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { postsRepo } from '@/lib/store'
+import { getSiteMeta, baseUrl, absUrl } from '@/lib/site-meta'
 import { isAuthed } from '@/lib/auth'
 import { fmtDate } from '@/components/ui'
 import PreviewBanner from '@/components/PreviewBanner'
+import JsonLd from '@/components/site/JsonLd'
 import Reveal from '@/components/site/Reveal'
 
 export const dynamic = 'force-dynamic'
@@ -13,7 +15,18 @@ export const dynamic = 'force-dynamic'
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const post = await postsRepo.getBySlug(params.slug)
   if (!post) return { title: 'Not found' }
-  return { title: post.metaTitle || post.title, description: post.metaDescription }
+  const meta = await getSiteMeta()
+  const title = post.metaTitle || post.title
+  const description = post.metaDescription || post.excerpt
+  const canonical = `/blog/${post.slug}`
+  const image = post.featuredImage || meta.ogImage
+  return {
+    title, description,
+    alternates: { canonical },
+    robots: post.status !== 'published' ? { index: false, follow: false } : undefined,
+    openGraph: { title, description, url: canonical, type: 'article', publishedTime: post.createdAt, modifiedTime: post.updatedAt, images: image ? [image] : [] },
+    twitter: { card: 'summary_large_image', title, description, images: image ? [image] : [] },
+  }
 }
 
 export default async function BlogPost({
@@ -30,9 +43,23 @@ export default async function BlogPost({
   if (post.status !== 'published' && !isPreview) notFound()
 
   const paragraphs = post.body.split('\n').filter((line) => line.trim().length > 0)
+  const meta = await getSiteMeta()
+  const base = baseUrl(meta)
+  const articleLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: post.title,
+    description: post.metaDescription || post.excerpt,
+    image: post.featuredImage ? [post.featuredImage] : undefined,
+    datePublished: post.createdAt,
+    dateModified: post.updatedAt,
+    url: absUrl(base, `/blog/${post.slug}`),
+    publisher: { '@type': 'Organization', name: meta.title },
+  }
 
   return (
     <article className="pb-24">
+      <JsonLd data={articleLd} />
       <div className="mx-auto max-w-3xl px-6 pt-10">
         {isPreview && <PreviewBanner backHref={`/admin/posts/${post.id}/edit`} />}
         <Link href="/blog" className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-900">

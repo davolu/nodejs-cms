@@ -111,6 +111,34 @@ export default function SettingsPage() {
               )
             })}
           </div>
+
+          {/* SEO & social */}
+          <div className="card space-y-4 p-5">
+            <h3 className="text-sm font-semibold text-slate-900">SEO &amp; social</h3>
+            <div>
+              <label className="label">Default social image (OG image)</label>
+              <input className="input" value={values.og_image ?? ''} onChange={(e) => setValues((v) => ({ ...v, og_image: e.target.value }))} placeholder="https://…/og.jpg" />
+              <p className="field-hint">Shown when your pages are shared on social media.</p>
+            </div>
+            <div>
+              <label className="label">Twitter/X handle</label>
+              <input className="input" value={values.twitter_handle ?? ''} onChange={(e) => setValues((v) => ({ ...v, twitter_handle: e.target.value }))} placeholder="@yourhandle" />
+            </div>
+          </div>
+
+          {/* Analytics & custom scripts */}
+          <div className="card space-y-4 p-5">
+            <h3 className="text-sm font-semibold text-slate-900">Analytics &amp; custom code</h3>
+            <p className="text-xs text-slate-500">Paste snippets from Google Analytics, Plausible, PostHog, live-chat widgets, or site verification. Added to every public page.</p>
+            <div>
+              <label className="label">Head code</label>
+              <textarea className="input min-h-[110px] font-mono text-xs" value={values.head_scripts ?? ''} onChange={(e) => setValues((v) => ({ ...v, head_scripts: e.target.value }))} placeholder="&lt;script&gt;…&lt;/script&gt;" />
+            </div>
+            <div>
+              <label className="label">Body end code</label>
+              <textarea className="input min-h-[90px] font-mono text-xs" value={values.body_scripts ?? ''} onChange={(e) => setValues((v) => ({ ...v, body_scripts: e.target.value }))} placeholder="&lt;script&gt;…&lt;/script&gt;" />
+            </div>
+          </div>
         </div>
       )}
     </div>

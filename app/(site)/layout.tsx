@@ -1,19 +1,32 @@
 import Link from 'next/link'
 import { settingsRepo, pagesRepo } from '@/lib/store'
+import { getSiteMeta, baseUrl } from '@/lib/site-meta'
 import { CartProvider } from '@/components/shop/CartProvider'
 import CartButton from '@/components/shop/CartButton'
+import RawScripts from '@/components/site/RawScripts'
+import JsonLd from '@/components/site/JsonLd'
 
 export const dynamic = 'force-dynamic'
 
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
-  const [settings, pages] = await Promise.all([settingsRepo.list(), pagesRepo.list()])
+  const [settings, pages, meta] = await Promise.all([settingsRepo.list(), pagesRepo.list(), getSiteMeta()])
   const siteTitle = settings.find((s) => s.key === 'site_title')?.value || 'My Site'
   const homeId = settings.find((s) => s.key === 'home_page_id')?.value
   const nav = pages.filter((p) => p.status === 'published' && p.id !== homeId && p.slug !== 'home').slice(0, 5)
   const initial = siteTitle.trim().charAt(0).toUpperCase() || 'M'
+  const base = baseUrl(meta)
+  const websiteLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: meta.title,
+    description: meta.description,
+    url: base,
+  }
 
   return (
     <CartProvider>
+    <JsonLd data={websiteLd} />
+    <RawScripts html={meta.headScripts} target="head" />
     <div className="flex min-h-screen flex-col bg-white text-slate-900">
       <noscript>
         <style>{`.reveal{opacity:1 !important;transform:none !important}`}</style>
@@ -68,6 +81,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
         </div>
       </footer>
       <CartButton />
+      <RawScripts html={meta.bodyScripts} target="body" />
     </div>
     </CartProvider>
   )
