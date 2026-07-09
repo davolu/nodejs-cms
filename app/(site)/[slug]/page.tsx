@@ -1,12 +1,13 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
-import { pagesRepo, expandGlobals } from '@/lib/store'
+import { pagesRepo, expandGlobals, usersRepo } from '@/lib/store'
 import { getSiteMeta } from '@/lib/site-meta'
 import { isAuthed } from '@/lib/auth'
 import { getMemberId } from '@/lib/members'
 import BlockRenderer from '@/components/BlockRenderer'
 import PreviewBanner from '@/components/PreviewBanner'
 import MembersGate from '@/components/site/MembersGate'
+import Paywall from '@/components/site/Paywall'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,7 +18,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   const title = page.metaTitle || page.title
   const description = page.metaDescription || meta.description
   const canonical = `/${page.slug}`
-  const noindex = page.status !== 'published' || page.access === 'members'
+  const noindex = page.status !== 'published' || page.access === 'members' || page.access === 'subscribers'
   return {
     title, description,
     alternates: { canonical },
@@ -40,7 +41,10 @@ export default async function PublicPage({
   const isPreview = searchParams?.preview === '1' && isAuthed()
   if (page.status !== 'published' && !isPreview) notFound()
 
-  const gated = page.access === 'members' && !getMemberId() && !isPreview
+  const memberId = getMemberId()
+  const member = memberId ? await usersRepo.findById(memberId) : null
+  const needsLogin = (page.access === 'members' || page.access === 'subscribers') && !member && !isPreview
+  const needsSubscription = page.access === 'subscribers' && member && !member.subscribed && !isPreview
   const leadsWithHero = page.blocks[0]?.type === 'hero'
   const blocks = await expandGlobals(page.blocks)
 
@@ -51,8 +55,10 @@ export default async function PublicPage({
           <PreviewBanner backHref={`/admin/pages/${page.id}/edit`} />
         </div>
       )}
-      {gated ? (
+      {needsLogin ? (
         <MembersGate title={page.title} theme={page.theme} />
+      ) : needsSubscription ? (
+        <Paywall title={page.title} theme={page.theme} />
       ) : (
         <>
           {!leadsWithHero && (

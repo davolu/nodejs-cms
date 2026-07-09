@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { Trash2, UserRound } from 'lucide-react'
 import { PageHeader, EmptyState, fmtDate } from '@/components/ui'
 
-interface Member { id: string; email: string; name: string; createdAt: string }
+interface Member { id: string; email: string; name: string; subscribed?: boolean; plan?: string; createdAt: string }
 
 export default function MembersPage() {
   const [items, setItems] = useState<Member[]>([])
@@ -38,6 +38,7 @@ export default function MembersPage() {
               <tr className="border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-400">
                 <th className="px-5 py-3 font-medium">Name</th>
                 <th className="px-5 py-3 font-medium">Email</th>
+                <th className="px-5 py-3 font-medium">Plan</th>
                 <th className="hidden px-5 py-3 font-medium sm:table-cell">Joined</th>
                 <th className="px-5 py-3" />
               </tr>
@@ -52,6 +53,7 @@ export default function MembersPage() {
                     </span>
                   </td>
                   <td className="px-5 py-3 text-slate-600">{m.email}</td>
+                  <td className="px-5 py-3">{m.subscribed ? <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-600">{m.plan || 'Subscribed'}</span> : <span className="text-xs text-slate-400">Free</span>}</td>
                   <td className="hidden px-5 py-3 text-slate-500 sm:table-cell">{fmtDate(m.createdAt)}</td>
                   <td className="px-5 py-3 text-right">
                     <button onClick={() => remove(m.id)} className="btn-danger !px-2" aria-label="Remove"><Trash2 className="h-4 w-4" /></button>

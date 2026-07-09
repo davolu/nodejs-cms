@@ -2,7 +2,7 @@ import {
   LayoutTemplate, Grid3x3, BarChart3, Megaphone, Quote, Heading, Type, Image as ImageIcon, MousePointerClick,
   Minus, MoveVertical, Columns2, List, ListChecks, TriangleAlert, Sparkle, Images, Play, Building2,
   MessageSquareQuote, Tags, Users, ListOrdered, BarChart2, Mail, CircleHelp, Share2,
-  PanelsTopLeft, GalleryHorizontal, Timer, Contrast, Code, FileCode, MapPin, CalendarClock, MessageSquare, UserRound, ShoppingBag, Blocks, Database,
+  PanelsTopLeft, GalleryHorizontal, Timer, Contrast, Code, FileCode, MapPin, CalendarClock, MessageSquare, UserRound, ShoppingBag, Blocks, Database, CreditCard,
 } from 'lucide-react'
 import { WIDGETS } from '@/lib/widgets'
 
@@ -10,7 +10,7 @@ const NAME_ICON: Record<string, any> = {
   LayoutTemplate, Grid3x3, BarChart3, Megaphone, Quote, Heading, Type, ImageIcon, MousePointerClick,
   Minus, MoveVertical, Columns2, List, ListChecks, TriangleAlert, Sparkle, Images, Play, Building2,
   MessageSquareQuote, Tags, Users, ListOrdered, BarChart2, Mail, CircleHelp, Share2,
-  PanelsTopLeft, GalleryHorizontal, Timer, Contrast, Code, FileCode, MapPin, CalendarClock, MessageSquare, UserRound, ShoppingBag, Blocks, Database,
+  PanelsTopLeft, GalleryHorizontal, Timer, Contrast, Code, FileCode, MapPin, CalendarClock, MessageSquare, UserRound, ShoppingBag, Blocks, Database, CreditCard,
 }
 
 export interface CatalogItem { type: string; label: string; category: string; icon: any }

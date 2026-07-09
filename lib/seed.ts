@@ -8,7 +8,7 @@ export interface Page {
   slug: string
   blocks: Block[]
   theme: string
-  access: 'public' | 'members'
+  access: 'public' | 'members' | 'subscribers'
   template: string
   metaTitle: string
   metaDescription: string
@@ -105,6 +105,9 @@ export interface User {
   email: string
   name: string
   passwordHash: string
+  subscribed: boolean
+  plan: string
+  stripeCustomerId: string
   createdAt: string
 }
 
@@ -146,6 +149,9 @@ export const seedUsers: User[] = [
     email: 'member@acme.com',
     name: 'Demo Member',
     passwordHash: 'd44decfa4163a8d5bf11d35fe76bf215:1f961898f445b81a1d090c9a23c2b2b5b0d4192613444721fe4fa92e3558a6d29925a5788bd6eecf0cbe98b22162ce8917d3ae7813cb12aba7a17c09b2f91925',
+    subscribed: false,
+    plan: '',
+    stripeCustomerId: '',
     createdAt: new Date('2026-01-01').toISOString(),
   },
 ]
@@ -250,6 +256,9 @@ export const seedMedia: MediaItem[] = [
 ]
 
 export const seedSettings: Setting[] = [
+  { key: 'membership_plans', value: JSON.stringify([
+    { id: 'pro', name: 'Pro', priceCents: 900, interval: 'month', description: 'Full access to members-only content.', features: ['All premium articles', 'Community access', 'Cancel anytime'] },
+  ]), updatedAt: iso('2026-01-01') },
   { key: 'site_title', value: 'Acme Inc.', updatedAt: iso('2026-01-01') },
   { key: 'site_description', value: 'Tools that help teams ship faster.', updatedAt: iso('2026-01-01') },
   { key: 'site_url', value: 'https://acme.example.com', updatedAt: iso('2026-01-01') },

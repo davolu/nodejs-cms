@@ -36,6 +36,8 @@ export const WIDGETS: WidgetDef[] = [
   { type: 'columns', label: 'Two Columns', category: 'Layout', icon: 'Columns2', kind: 'columns',
     defaults: { heading: '', colA: 'Left column text.', colB: 'Right column text.' },
     fields: [txt('heading', 'Heading (optional)'), area('colA', 'Left column'), area('colB', 'Right column')] },
+  { type: 'plans', label: 'Pricing Plans', category: 'Members', icon: 'CreditCard', kind: 'plans',
+    defaults: { heading: 'Choose your plan' }, fields: [txt('heading', 'Heading')] },
   { type: 'globalblock', label: 'Global Block', category: 'Layout', icon: 'Blocks', kind: 'global',
     defaults: { blockId: '' },
     fields: [{ key: 'blockId', label: 'Reusable block', type: 'globalblock' }] },

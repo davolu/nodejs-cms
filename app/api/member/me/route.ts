@@ -8,5 +8,5 @@ export async function GET() {
   const id = getMemberId()
   if (!id) return NextResponse.json({ user: null })
   const user = await usersRepo.findById(id)
-  return NextResponse.json({ user: user ? { id: user.id, email: user.email, name: user.name } : null })
+  return NextResponse.json({ user: user ? { id: user.id, email: user.email, name: user.name, subscribed: user.subscribed, plan: user.plan } : null })
 }

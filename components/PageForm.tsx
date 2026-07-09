@@ -23,7 +23,7 @@ export default function PageForm({ initial }: Props) {
   const [slugTouched, setSlugTouched] = useState(editing)
   const [blocks, setBlocks] = useState<Block[]>(initial?.blocks ?? [])
   const [theme, setTheme] = useState<string>(initial?.theme ?? 'indigo')
-  const [access, setAccess] = useState<'public' | 'members'>(initial?.access ?? 'public')
+  const [access, setAccess] = useState<'public' | 'members' | 'subscribers'>(initial?.access ?? 'public')
   const [mode, setMode] = useState<'visual' | 'form'>('visual')
   const [form, setForm] = useState({
     title: initial?.title ?? '',
@@ -257,11 +257,13 @@ export default function PageForm({ initial }: Props) {
             <p className="field-hint">This is the page&apos;s address on your live site.</p>
 
             <label className="label mt-4">Access</label>
-            <select className="input" value={access} onChange={(e) => setAccess(e.target.value as 'public' | 'members')}>
+            <select className="input" value={access} onChange={(e) => setAccess(e.target.value as 'public' | 'members' | 'subscribers')}>
               <option value="public">Public — anyone can view</option>
               <option value="members">Members only — sign-in required</option>
+              <option value="subscribers">Subscribers only — paid plan required</option>
             </select>
             {access === 'members' && <p className="field-hint">Visitors must log in via a Login / Signup widget to see this page.</p>}
+            {access === 'subscribers' && <p className="field-hint">Visitors must be signed in and have an active subscription. Non-subscribers see a paywall with your plans.</p>}
 
             <label className="label mt-4">Template</label>
             <select className="input" value={form.template} onChange={(e) => set('template', e.target.value)}>

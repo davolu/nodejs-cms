@@ -68,6 +68,9 @@ CREATE TABLE IF NOT EXISTS users (
   email         TEXT NOT NULL UNIQUE,
   name          TEXT NOT NULL DEFAULT '',
   password_hash TEXT NOT NULL,
+  subscribed    BOOLEAN NOT NULL DEFAULT false,
+  plan          TEXT NOT NULL DEFAULT '',
+  stripe_customer_id TEXT NOT NULL DEFAULT '',
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -120,3 +123,6 @@ CREATE TABLE IF NOT EXISTS entries (
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_entries_collection ON entries(collection_id);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS subscribed BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS plan TEXT NOT NULL DEFAULT '';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_customer_id TEXT NOT NULL DEFAULT '';

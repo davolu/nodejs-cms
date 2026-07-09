@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import {
   ArrowRight, Check, Info, CircleCheck, TriangleAlert, CircleAlert, Sparkle, ChevronDown, ChevronLeft, ChevronRight,
-  Twitter, Facebook, Instagram, Linkedin, Youtube, Github, UserRound, LogOut, Blocks,
+  Twitter, Facebook, Instagram, Linkedin, Youtube, Github, UserRound, LogOut, Blocks, Loader2,
 } from 'lucide-react'
 import type { Block } from '@/lib/blocks'
 import Reveal from '@/components/site/Reveal'
@@ -241,6 +241,8 @@ export default function WidgetRenderer({ block }: { block: Block }) {
       return <GlobalPlaceholder blockId={p.blockId} />
     case 'collection':
       return <CollectionList p={p} />
+    case 'plans':
+      return <PlansWidget p={p} />
     case 'faq':
       return <Faq heading={p.heading} items={p.items || []} />
     case 'tabs':
@@ -387,6 +389,53 @@ function FormWidget({ p }: { p: any }) {
 
 interface ShopProduct { id: string; name: string; description: string; price: number; currency: string; image: string }
 interface ColField { key: string; label: string; type: string }
+interface PlanItem { id: string; name: string; priceCents: number; interval: string; description?: string; features?: string[] }
+function PlansWidget({ p }: { p: any }) {
+  const [plans, setPlans] = useState<PlanItem[]>([])
+  const [busy, setBusy] = useState('')
+  const [msg, setMsg] = useState('')
+  const money = (c: number) => `$${(c / 100).toFixed(c % 100 === 0 ? 0 : 2)}`
+  useEffect(() => { fetch('/api/plans').then((r) => r.json()).then((d) => setPlans(Array.isArray(d) ? d : [])).catch(() => {}) }, [])
+
+  async function subscribe(planId: string) {
+    setBusy(planId); setMsg('')
+    const res = await fetch('/api/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ planId }) })
+    const d = await res.json().catch(() => ({}))
+    if (res.ok && d.url) { window.location.href = d.url; return }
+    if (res.status === 401) setMsg('Please sign in or create an account first, then subscribe.')
+    else setMsg(d.error || 'Could not start checkout.')
+    setBusy('')
+  }
+
+  if (plans.length === 0) return <section className="px-6 py-12"><p className="text-center text-sm text-slate-400">No plans configured yet. Add them under Memberships in the admin.</p></section>
+
+  return (
+    <section className="px-6 py-14">
+      <div className="mx-auto max-w-5xl">
+        {p.heading && <h2 className="site-heading mb-8 text-center text-3xl font-bold text-slate-900 sm:text-4xl">{p.heading}</h2>}
+        {msg && <p className="mb-4 text-center text-sm" style={{ color: 'var(--solid)' }}>{msg}</p>}
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {plans.map((pl) => (
+            <div key={pl.id} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="site-heading text-lg font-bold text-slate-900">{pl.name}</div>
+              <div className="mt-1"><span className="site-heading text-3xl font-bold" style={{ color: 'var(--solid)' }}>{money(pl.priceCents)}</span><span className="text-sm text-slate-400">/{pl.interval}</span></div>
+              {pl.description && <p className="mt-2 text-sm text-slate-500">{pl.description}</p>}
+              {pl.features && (
+                <ul className="mt-4 space-y-1.5 text-sm text-slate-600">
+                  {pl.features.map((f, i) => <li key={i} className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0" style={{ color: 'var(--solid)' }} /> {f}</li>)}
+                </ul>
+              )}
+              <button onClick={() => subscribe(pl.id)} disabled={!!busy} className="mt-5 flex w-full items-center justify-center gap-2 rounded-full py-2.5 text-sm font-semibold text-white disabled:opacity-60" style={grad}>
+                {busy === pl.id ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Subscribe
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
 function CollectionList({ p }: { p: any }) {
   const [fields, setFields] = useState<ColField[]>([])
   const [entries, setEntries] = useState<any[]>([])

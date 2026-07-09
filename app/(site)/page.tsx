@@ -1,9 +1,10 @@
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
-import { pagesRepo, resolveHomePage, expandGlobals } from '@/lib/store'
+import { pagesRepo, resolveHomePage, expandGlobals, usersRepo } from '@/lib/store'
 import { getMemberId } from '@/lib/members'
 import BlockRenderer from '@/components/BlockRenderer'
 import MembersGate from '@/components/site/MembersGate'
+import Paywall from '@/components/site/Paywall'
 import Reveal from '@/components/site/Reveal'
 
 export const dynamic = 'force-dynamic'
@@ -12,8 +13,11 @@ export default async function Home() {
   const home = await resolveHomePage()
 
   if (home && home.status === 'published') {
-    if (home.access === 'members' && !getMemberId()) {
-      return <MembersGate title={home.title} theme={home.theme} />
+    if (home.access === 'members' || home.access === 'subscribers') {
+      const memberId = getMemberId()
+      const member = memberId ? await usersRepo.findById(memberId) : null
+      if (!member) return <MembersGate title={home.title} theme={home.theme} />
+      if (home.access === 'subscribers' && !member.subscribed) return <Paywall title={home.title} theme={home.theme} />
     }
     const blocks = await expandGlobals(home.blocks)
     return <BlockRenderer blocks={blocks} theme={home.theme} />
