@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react'
 import {
-  DndContext, closestCenter, PointerSensor, KeyboardSensor,
-  useSensor, useSensors, DragEndEvent,
+  DndContext, DragOverlay, closestCenter, PointerSensor, KeyboardSensor,
+  useSensor, useSensors, useDraggable, useDroppable, DragEndEvent, DragStartEvent,
 } from '@dnd-kit/core'
 import {
   arrayMove, SortableContext, sortableKeyboardCoordinates,
@@ -12,22 +12,20 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import {
   GripVertical, Trash2, Plus, Copy, ChevronUp, ChevronDown, Maximize2, Minimize2,
-  Eye, Save, Sliders, Check, X,
+  Eye, Save, Sliders, Check, X, Search,
   Type, Heading, Image as ImageIcon, MousePointerClick, Quote, LayoutTemplate, Grid3x3, BarChart3, Megaphone,
 } from 'lucide-react'
 import { Block, BlockType, makeBlock, blockId, BLOCK_LABELS, variantsFor, themeVars } from '@/lib/blocks'
 
-const ADD_MENU: { type: BlockType; icon: any }[] = [
-  { type: 'hero', icon: LayoutTemplate },
-  { type: 'heading', icon: Heading },
-  { type: 'paragraph', icon: Type },
-  { type: 'image', icon: ImageIcon },
-  { type: 'button', icon: MousePointerClick },
-  { type: 'quote', icon: Quote },
-  { type: 'features', icon: Grid3x3 },
-  { type: 'stats', icon: BarChart3 },
-  { type: 'cta', icon: Megaphone },
+const ICONS: Record<BlockType, any> = {
+  hero: LayoutTemplate, heading: Heading, paragraph: Type, image: ImageIcon,
+  button: MousePointerClick, quote: Quote, features: Grid3x3, stats: BarChart3, cta: Megaphone,
+}
+const CATEGORIES: { label: string; types: BlockType[] }[] = [
+  { label: 'Sections', types: ['hero', 'features', 'stats', 'cta', 'quote'] },
+  { label: 'Basic', types: ['heading', 'paragraph', 'image', 'button'] },
 ]
+const ALL_TYPES: BlockType[] = ['hero', 'heading', 'paragraph', 'image', 'button', 'quote', 'features', 'stats', 'cta']
 
 export default function VisualEditor({
   blocks, onChange, theme, onSave, onPreview, saving,
@@ -41,6 +39,7 @@ export default function VisualEditor({
 }) {
   const [selected, setSelected] = useState<string | null>(null)
   const [fullscreen, setFullscreen] = useState(false)
+  const [paletteDrag, setPaletteDrag] = useState<BlockType | null>(null)
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -55,11 +54,6 @@ export default function VisualEditor({
     return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = prev }
   }, [fullscreen])
 
-  function onDragEnd(e: DragEndEvent) {
-    const { active, over } = e
-    if (!over || active.id === over.id) return
-    onChange(arrayMove(blocks, blocks.findIndex((b) => b.id === active.id), blocks.findIndex((b) => b.id === over.id)))
-  }
   const update = (id: string, patch: Partial<Block>) => onChange(blocks.map((b) => (b.id === id ? { ...b, ...patch } : b)))
   const remove = (id: string) => { onChange(blocks.filter((b) => b.id !== id)); setSelected(null) }
   const duplicate = (id: string) => {
@@ -74,36 +68,62 @@ export default function VisualEditor({
   const insertAt = (index: number, type: BlockType) => {
     const next = [...blocks]; const nb = makeBlock(type); next.splice(index, 0, nb); onChange(next); setSelected(nb.id)
   }
+  const append = (type: BlockType) => insertAt(blocks.length, type)
 
-  const canvas = (
-    <div className="min-h-[300px]" style={themeVars(theme) as React.CSSProperties} onClick={() => setSelected(null)}>
-      <InsertBar onPick={(t) => insertAt(0, t)} />
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-        <SortableContext items={blocks.map((b) => b.id)} strategy={verticalListSortingStrategy}>
-          {blocks.map((block, i) => (
-            <div key={block.id}>
-              <SortableVisualBlock
-                block={block} selected={selected === block.id} first={i === 0} last={i === blocks.length - 1}
-                onSelect={() => setSelected(block.id)} onUpdate={update} onRemove={remove} onDuplicate={duplicate} onMove={move}
-              />
-              <InsertBar onPick={(t) => insertAt(i + 1, t)} />
-            </div>
-          ))}
-        </SortableContext>
-      </DndContext>
+  function onDragStart(e: DragStartEvent) {
+    const id = String(e.active.id)
+    if (id.startsWith('new:')) setPaletteDrag(id.slice(4) as BlockType)
+  }
+  function onDragEnd(e: DragEndEvent) {
+    const activeId = String(e.active.id)
+    const overId = e.over ? String(e.over.id) : ''
+    setPaletteDrag(null)
+
+    if (activeId.startsWith('new:')) {
+      const type = activeId.slice(4) as BlockType
+      let index = blocks.length
+      if (overId.startsWith('slot:')) index = parseInt(overId.slice(5), 10)
+      else { const bi = blocks.findIndex((b) => b.id === overId); if (bi >= 0) index = bi }
+      insertAt(index, type)
+      return
+    }
+    // reorder existing blocks
+    if (overId && activeId !== overId) {
+      const from = blocks.findIndex((b) => b.id === activeId)
+      const to = blocks.findIndex((b) => b.id === overId)
+      if (from >= 0 && to >= 0) onChange(arrayMove(blocks, from, to))
+    }
+  }
+
+  const canvasInner = (dropSlots: boolean) => (
+    <div style={themeVars(theme) as React.CSSProperties} onClick={() => setSelected(null)}>
+      {dropSlots ? <DropSlot index={0} active={!!paletteDrag} /> : <InsertBar onPick={(t) => insertAt(0, t)} />}
+      <SortableContext items={blocks.map((b) => b.id)} strategy={verticalListSortingStrategy}>
+        {blocks.map((block, i) => (
+          <div key={block.id}>
+            <SortableVisualBlock
+              block={block} selected={selected === block.id} first={i === 0} last={i === blocks.length - 1}
+              onSelect={() => setSelected(block.id)} onUpdate={update} onRemove={remove} onDuplicate={duplicate} onMove={move}
+            />
+            {dropSlots ? <DropSlot index={i + 1} active={!!paletteDrag} /> : <InsertBar onPick={(t) => insertAt(i + 1, t)} />}
+          </div>
+        ))}
+      </SortableContext>
       {blocks.length === 0 && (
-        <div className="py-16 text-center text-sm text-slate-400">Empty page. Use the <span className="font-medium text-slate-600">+</span> above to add your first block.</div>
+        <div className="py-16 text-center text-sm text-slate-400">
+          {dropSlots ? 'Drag a widget from the left onto the canvas.' : <>Empty page. Use the <span className="font-medium text-slate-600">+</span> above to add your first block.</>}
+        </div>
       )}
     </div>
   )
 
+  // ── Fullscreen: Elementor-style two-pane ──
   if (fullscreen) {
     return (
       <div className="fixed inset-0 z-[60] flex flex-col bg-slate-100">
         <div className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-2.5">
           <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
             <LayoutTemplate className="h-4 w-4 text-brand-600" /> Visual editor
-            <span className="hidden text-xs font-normal text-slate-400 sm:inline">— click to edit, drag to reorder</span>
           </div>
           <div className="flex items-center gap-2">
             {onPreview && <button onClick={onPreview} disabled={saving} className="btn-outline !py-1.5"><Eye className="h-4 w-4" /> Preview</button>}
@@ -111,33 +131,110 @@ export default function VisualEditor({
             <button onClick={() => setFullscreen(false)} className="btn-ghost !py-1.5"><Minimize2 className="h-4 w-4" /> Exit</button>
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto p-4 sm:p-8">
-          <div className="mx-auto max-w-4xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
-            <ChromeBar onFullscreen={() => setFullscreen(false)} fullscreen />
-            {canvas}
+
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={onDragStart} onDragEnd={onDragEnd}>
+          <div className="flex min-h-0 flex-1">
+            <WidgetPanel onAdd={append} />
+            <div className="flex-1 overflow-y-auto bg-slate-100 p-4 sm:p-8">
+              <div className="mx-auto max-w-4xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+                {canvasInner(true)}
+              </div>
+            </div>
           </div>
-        </div>
+          <DragOverlay dropAnimation={null}>
+            {paletteDrag ? (
+              <div className="flex items-center gap-2 rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-lg">
+                {(() => { const I = ICONS[paletteDrag]; return <I className="h-4 w-4 text-brand-600" /> })()} {BLOCK_LABELS[paletteDrag]}
+              </div>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
       </div>
     )
   }
 
+  // ── Inline: compact editor ──
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
       <ChromeBar onFullscreen={() => setFullscreen(true)} />
-      {canvas}
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+        {canvasInner(false)}
+      </DndContext>
     </div>
   )
 }
 
-function ChromeBar({ onFullscreen, fullscreen }: { onFullscreen: () => void; fullscreen?: boolean }) {
+/* ── Left widget panel (Elementor-style) ── */
+function WidgetPanel({ onAdd }: { onAdd: (t: BlockType) => void }) {
+  const [q, setQ] = useState('')
+  const query = q.trim().toLowerCase()
+  return (
+    <aside className="hidden w-72 shrink-0 flex-col border-r border-slate-200 bg-white md:flex">
+      <div className="border-b border-slate-100 p-3">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search widgets…" className="input !pl-9" />
+        </div>
+      </div>
+      <div className="flex-1 overflow-y-auto p-3">
+        {CATEGORIES.map((cat) => {
+          const types = cat.types.filter((t) => !query || BLOCK_LABELS[t].toLowerCase().includes(query))
+          if (types.length === 0) return null
+          return (
+            <div key={cat.label} className="mb-5">
+              <div className="mb-2 px-1 text-xs font-semibold uppercase tracking-wider text-slate-400">{cat.label}</div>
+              <div className="grid grid-cols-2 gap-2">
+                {types.map((t) => <WidgetTile key={t} type={t} onAdd={onAdd} />)}
+              </div>
+            </div>
+          )
+        })}
+        <p className="px-1 text-xs text-slate-400">Drag a widget onto the canvas, or click to add it.</p>
+      </div>
+    </aside>
+  )
+}
+
+function WidgetTile({ type, onAdd }: { type: BlockType; onAdd: (t: BlockType) => void }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: `new:${type}` })
+  const Icon = ICONS[type]
+  return (
+    <button
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      onClick={() => onAdd(type)}
+      className={`flex cursor-grab flex-col items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-4 text-center transition-all hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-md active:cursor-grabbing ${isDragging ? 'opacity-40' : ''}`}
+    >
+      <Icon className="h-6 w-6 text-slate-500" />
+      <span className="text-xs font-medium text-slate-600">{BLOCK_LABELS[type]}</span>
+    </button>
+  )
+}
+
+/* ── Drop slot between blocks (fullscreen) ── */
+function DropSlot({ index, active }: { index: number; active: boolean }) {
+  const { setNodeRef, isOver } = useDroppable({ id: `slot:${index}` })
+  return (
+    <div ref={setNodeRef} className={`transition-all ${active ? 'h-14 py-2' : 'h-0'}`} onClick={(e) => e.stopPropagation()}>
+      {active && (
+        <div className={`mx-6 flex h-full items-center justify-center rounded-lg border-2 border-dashed text-xs font-medium transition-colors ${isOver ? 'border-brand-500 bg-brand-50 text-brand-600' : 'border-slate-200 text-slate-400'}`}>
+          Drop here
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ChromeBar({ onFullscreen }: { onFullscreen: () => void }) {
   return (
     <div className="flex items-center gap-1.5 border-b border-slate-100 bg-slate-50 px-4 py-2.5">
       <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
       <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
       <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
-      <span className="ml-3 hidden text-xs text-slate-400 sm:inline">Live preview — click any element to edit, drag to reorder</span>
-      <button onClick={onFullscreen} className="ml-auto flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-slate-500 hover:bg-slate-200 hover:text-slate-800" title={fullscreen ? 'Exit full screen' : 'Edit in full screen'}>
-        {fullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />} {fullscreen ? 'Exit' : 'Full screen'}
+      <span className="ml-3 hidden text-xs text-slate-400 sm:inline">Live preview — click to edit, drag to reorder</span>
+      <button onClick={onFullscreen} className="ml-auto flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-slate-500 hover:bg-slate-200 hover:text-slate-800" title="Edit in full screen (widget panel)">
+        <Maximize2 className="h-3.5 w-3.5" /> Full screen
       </button>
     </div>
   )
@@ -152,11 +249,11 @@ function InsertBar({ onPick }: { onPick: (t: BlockType) => void }) {
       </button>
       {open && (
         <div className="absolute top-4 z-30 grid grid-cols-3 gap-1 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl">
-          {ADD_MENU.map(({ type, icon: Icon }) => (
+          {ALL_TYPES.map((type) => { const Icon = ICONS[type]; return (
             <button key={type} onClick={() => { onPick(type); setOpen(false) }} className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50">
               <Icon className="h-4 w-4 text-slate-400" /> {BLOCK_LABELS[type]}
             </button>
-          ))}
+          )})}
         </div>
       )}
     </div>
@@ -199,7 +296,6 @@ function SortableVisualBlock({
   )
 }
 
-/* ── inline editors ── */
 function AutoText({ value, onChange, className, placeholder }: { value: string; onChange: (v: string) => void; className?: string; placeholder?: string }) {
   const ref = useRef<HTMLTextAreaElement>(null)
   useEffect(() => { const el = ref.current; if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px' } }, [value])
@@ -234,11 +330,9 @@ function EditableBlock({ block: b, onUpdate }: { block: Block; onUpdate: (id: st
           <div className="relative mx-auto max-w-2xl">
             <AutoText value={b.heading || ''} onChange={(v) => set({ heading: v })} placeholder="Hero heading" className={`site-heading text-center text-3xl font-bold leading-tight sm:text-5xl ${light ? 'text-slate-900 placeholder:text-slate-300' : 'text-white placeholder:text-white/40'}`} />
             <AutoText value={b.subheading || ''} onChange={(v) => set({ subheading: v })} placeholder="Supporting subheading" className={`mt-4 text-center text-lg ${light ? 'text-slate-600 placeholder:text-slate-400' : 'text-slate-300 placeholder:text-slate-500'}`} />
-            {(b.label || b.label === '') && (
-              <span className="mt-6 inline-flex rounded-full px-5 py-2 text-sm font-semibold text-white" style={grad}>
-                <Line value={b.label || ''} onChange={(v) => set({ label: v })} placeholder="Button label" className="text-center text-white placeholder:text-white/60" />
-              </span>
-            )}
+            <span className="mt-6 inline-flex rounded-full px-5 py-2 text-sm font-semibold text-white" style={grad}>
+              <Line value={b.label || ''} onChange={(v) => set({ label: v })} placeholder="Button label" className="text-center text-white placeholder:text-white/60" />
+            </span>
           </div>
         </section>
       )
@@ -326,13 +420,11 @@ function EditableBlock({ block: b, onUpdate }: { block: Block; onUpdate: (id: st
   }
 }
 
-/* ── style + settings panel ── */
 function SettingsPanel({ block: b, onUpdate, onClose }: { block: Block; onUpdate: (id: string, patch: Partial<Block>) => void; onClose: () => void }) {
   const set = (patch: Partial<Block>) => onUpdate(b.id, patch)
   const variants = variantsFor(b.type)
   const hasAlign = ['hero', 'heading', 'paragraph', 'button'].includes(b.type)
   const hasBg = ['features', 'stats'].includes(b.type)
-
   const addFeature = () => set({ features: [...(b.features || []), { title: 'New feature', text: 'Describe it here.' }] })
   const rmFeature = (i: number) => set({ features: (b.features || []).filter((_, j) => j !== i) })
   const addStat = () => set({ stats: [...(b.stats || []), { value: '00', label: 'Label' }] })
@@ -344,40 +436,27 @@ function SettingsPanel({ block: b, onUpdate, onClose }: { block: Block; onUpdate
         <span className="font-semibold text-slate-700">Block style</span>
         <button onClick={onClose} className="rounded p-1 text-slate-400 hover:bg-slate-200"><X className="h-4 w-4" /></button>
       </div>
-
       {variants.length > 0 && (
-        <div>
-          <div className="mb-1 text-xs font-medium text-slate-500">Style</div>
-          <div className="flex flex-wrap gap-1.5">
-            {variants.map((v) => (
-              <button key={v} onClick={() => set({ variant: v })} className={`rounded-lg border px-2.5 py-1 text-xs capitalize ${b.variant === v ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-slate-200 text-slate-600 hover:bg-white'}`}>{v}</button>
-            ))}
-          </div>
+        <div><div className="mb-1 text-xs font-medium text-slate-500">Style</div>
+          <div className="flex flex-wrap gap-1.5">{variants.map((v) => (
+            <button key={v} onClick={() => set({ variant: v })} className={`rounded-lg border px-2.5 py-1 text-xs capitalize ${b.variant === v ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-slate-200 text-slate-600 hover:bg-white'}`}>{v}</button>
+          ))}</div>
         </div>
       )}
-
       {hasAlign && (
-        <div>
-          <div className="mb-1 text-xs font-medium text-slate-500">Alignment</div>
-          <div className="flex gap-1.5">
-            {(['left', 'center'] as const).map((a) => (
-              <button key={a} onClick={() => set({ align: a })} className={`rounded-lg border px-2.5 py-1 text-xs capitalize ${(b.align || 'left') === a ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-slate-200 text-slate-600 hover:bg-white'}`}>{a}</button>
-            ))}
-          </div>
+        <div><div className="mb-1 text-xs font-medium text-slate-500">Alignment</div>
+          <div className="flex gap-1.5">{(['left', 'center'] as const).map((a) => (
+            <button key={a} onClick={() => set({ align: a })} className={`rounded-lg border px-2.5 py-1 text-xs capitalize ${(b.align || 'left') === a ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-slate-200 text-slate-600 hover:bg-white'}`}>{a}</button>
+          ))}</div>
         </div>
       )}
-
       {hasBg && (
-        <div>
-          <div className="mb-1 text-xs font-medium text-slate-500">Background</div>
-          <div className="flex gap-1.5">
-            {(['none', 'tint'] as const).map((g) => (
-              <button key={g} onClick={() => set({ bg: g })} className={`rounded-lg border px-2.5 py-1 text-xs capitalize ${(b.bg || 'none') === g ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-slate-200 text-slate-600 hover:bg-white'}`}>{g}</button>
-            ))}
-          </div>
+        <div><div className="mb-1 text-xs font-medium text-slate-500">Background</div>
+          <div className="flex gap-1.5">{(['none', 'tint'] as const).map((g) => (
+            <button key={g} onClick={() => set({ bg: g })} className={`rounded-lg border px-2.5 py-1 text-xs capitalize ${(b.bg || 'none') === g ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-slate-200 text-slate-600 hover:bg-white'}`}>{g}</button>
+          ))}</div>
         </div>
       )}
-
       {(b.type === 'hero' && (b.variant === 'image' || b.variant === 'split')) && (
         <Field label="Image URL"><input className="input" value={b.url || ''} onChange={(e) => set({ url: e.target.value })} placeholder="https://…" /></Field>
       )}
@@ -390,25 +469,18 @@ function SettingsPanel({ block: b, onUpdate, onClose }: { block: Block; onUpdate
       {(b.type === 'button' || b.type === 'hero' || b.type === 'cta') && (
         <Field label="Button link"><input className="input" value={b.href || ''} onChange={(e) => set({ href: e.target.value })} placeholder="/blog, https://…" /></Field>
       )}
-
       {b.type === 'features' && (
-        <div>
-          <div className="mb-1 text-xs font-medium text-slate-500">Features ({(b.features || []).length})</div>
+        <div><div className="mb-1 text-xs font-medium text-slate-500">Features ({(b.features || []).length})</div>
           <div className="flex flex-wrap gap-1.5">
-            {(b.features || []).map((_, i) => (
-              <button key={i} onClick={() => rmFeature(i)} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs text-slate-500 hover:border-red-300 hover:text-red-600">Item {i + 1} <X className="h-3 w-3" /></button>
-            ))}
+            {(b.features || []).map((_, i) => (<button key={i} onClick={() => rmFeature(i)} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs text-slate-500 hover:border-red-300 hover:text-red-600">Item {i + 1} <X className="h-3 w-3" /></button>))}
             <button onClick={addFeature} className="rounded-lg border border-dashed border-slate-300 px-2 py-1 text-xs text-slate-500 hover:bg-white"><Plus className="mr-1 inline h-3 w-3" />Add</button>
           </div>
         </div>
       )}
       {b.type === 'stats' && (
-        <div>
-          <div className="mb-1 text-xs font-medium text-slate-500">Stats ({(b.stats || []).length})</div>
+        <div><div className="mb-1 text-xs font-medium text-slate-500">Stats ({(b.stats || []).length})</div>
           <div className="flex flex-wrap gap-1.5">
-            {(b.stats || []).map((_, i) => (
-              <button key={i} onClick={() => rmStat(i)} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs text-slate-500 hover:border-red-300 hover:text-red-600">Stat {i + 1} <X className="h-3 w-3" /></button>
-            ))}
+            {(b.stats || []).map((_, i) => (<button key={i} onClick={() => rmStat(i)} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs text-slate-500 hover:border-red-300 hover:text-red-600">Stat {i + 1} <X className="h-3 w-3" /></button>))}
             <button onClick={addStat} className="rounded-lg border border-dashed border-slate-300 px-2 py-1 text-xs text-slate-500 hover:bg-white"><Plus className="mr-1 inline h-3 w-3" />Add</button>
           </div>
         </div>
