@@ -239,6 +239,8 @@ export default function WidgetRenderer({ block }: { block: Block }) {
       return <ProductGrid p={p} />
     case 'global':
       return <GlobalPlaceholder blockId={p.blockId} />
+    case 'collection':
+      return <CollectionList p={p} />
     case 'faq':
       return <Faq heading={p.heading} items={p.items || []} />
     case 'tabs':
@@ -384,6 +386,59 @@ function FormWidget({ p }: { p: any }) {
 }
 
 interface ShopProduct { id: string; name: string; description: string; price: number; currency: string; image: string }
+interface ColField { key: string; label: string; type: string }
+function CollectionList({ p }: { p: any }) {
+  const [fields, setFields] = useState<ColField[]>([])
+  const [entries, setEntries] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  useEffect(() => {
+    if (!p.collectionId) { setLoading(false); return }
+    Promise.all([
+      fetch(`/api/collections/${p.collectionId}`).then((r) => (r.ok ? r.json() : null)),
+      fetch(`/api/entries?collection=${p.collectionId}`).then((r) => (r.ok ? r.json() : [])),
+    ]).then(([col, ents]) => { setFields(col?.fields || []); setEntries(Array.isArray(ents) ? ents : []) })
+      .catch(() => {}).finally(() => setLoading(false))
+  }, [p.collectionId])
+
+  const imageField = fields.find((f) => f.type === 'image')?.key
+  const descField = fields.find((f) => f.type === 'textarea' || f.type === 'text')?.key
+  const urlField = fields.find((f) => f.type === 'url')?.key
+  const cols = { '2': 'sm:grid-cols-2', '3': 'sm:grid-cols-2 lg:grid-cols-3', '4': 'sm:grid-cols-2 lg:grid-cols-4' }[p.columns as string] || 'sm:grid-cols-2 lg:grid-cols-3'
+
+  return (
+    <section className="px-6 py-12">
+      <div className="mx-auto max-w-6xl">
+        {p.heading && <h2 className="site-heading mb-8 text-center text-3xl font-bold text-slate-900 sm:text-4xl">{p.heading}</h2>}
+        {loading ? <div className="py-10 text-center text-sm text-slate-400">Loading…</div>
+          : !p.collectionId ? <div className="py-10 text-center text-sm text-slate-400">Pick a collection in the widget settings.</div>
+          : entries.length === 0 ? <div className="py-10 text-center text-sm text-slate-400">No entries yet.</div>
+          : (
+            <div className={`grid grid-cols-1 gap-6 ${cols}`}>
+              {entries.map((e) => {
+                const card = (
+                  <div className="group h-full overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition-shadow hover:shadow-md">
+                    {imageField && e.data?.[imageField] && (
+                      <div className="aspect-video overflow-hidden bg-slate-100">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={e.data[imageField]} alt={e.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                      </div>
+                    )}
+                    <div className="p-5">
+                      <h3 className="site-heading font-bold text-slate-900">{e.title}</h3>
+                      {descField && e.data?.[descField] && <p className="mt-1 line-clamp-3 text-sm text-slate-500">{e.data[descField]}</p>}
+                    </div>
+                  </div>
+                )
+                const href = urlField ? e.data?.[urlField] : ''
+                return href ? <a key={e.id} href={href} className="block">{card}</a> : <div key={e.id}>{card}</div>
+              })}
+            </div>
+          )}
+      </div>
+    </section>
+  )
+}
+
 function GlobalPlaceholder({ blockId }: { blockId?: string }) {
   const [name, setName] = useState<string>('')
   useEffect(() => {

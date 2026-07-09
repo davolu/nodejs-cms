@@ -4,7 +4,7 @@
 // The 9 original blocks (hero/heading/paragraph/image/button/quote/features/stats/cta)
 // stay bespoke; everything here is rendered by WidgetRenderer and edited generically.
 
-export type FieldType = 'text' | 'textarea' | 'url' | 'select' | 'number' | 'items' | 'globalblock'
+export type FieldType = 'text' | 'textarea' | 'url' | 'select' | 'number' | 'items' | 'globalblock' | 'collection'
 export interface Field {
   key: string
   label: string
@@ -56,6 +56,9 @@ export const WIDGETS: WidgetDef[] = [
     fields: [txt('title', 'Title'), area('text', 'Text'), { key: 'align', label: 'Align', type: 'select', options: ['left', 'center'] }] },
   { type: 'callout', label: 'Callout', category: 'Content', icon: 'Quote', kind: 'callout',
     defaults: { text: 'A short, punchy callout statement.' }, fields: [area('text', 'Text')] },
+  { type: 'collection', label: 'Collection', category: 'Content', icon: 'Database', kind: 'collection',
+    defaults: { heading: '', collectionId: '', columns: '3' },
+    fields: [txt('heading', 'Heading (optional)'), { key: 'collectionId', label: 'Collection', type: 'collection' }, { key: 'columns', label: 'Columns', type: 'select', options: ['2', '3', '4'] }] },
 
   // ── Media ──
   { type: 'gallery', label: 'Gallery', category: 'Media', icon: 'Images', kind: 'gallery',

@@ -1,5 +1,5 @@
 import { Pool } from 'pg'
-import { seedPages, seedPosts, seedMedia, seedSettings, seedUsers, seedProducts, seedGlobalBlocks } from './seed'
+import { seedPages, seedPosts, seedMedia, seedSettings, seedUsers, seedProducts, seedGlobalBlocks, seedCollections, seedEntries } from './seed'
 import { SCHEMA_SQL } from './schema'
 
 // A single shared pool across hot-reloads / serverless invocations.
@@ -78,6 +78,19 @@ async function initOnce(): Promise<void> {
         `INSERT INTO global_blocks (id,name,blocks,updated_at,created_at)
          VALUES ($1,$2,$3,$4,$5) ON CONFLICT (id) DO NOTHING`,
         [g.id, g.name, JSON.stringify(g.blocks), g.updatedAt, g.createdAt]
+      )
+    }
+    for (const c of seedCollections) {
+      await pool.query(
+        `INSERT INTO collections (id,name,slug,fields,created_at) VALUES ($1,$2,$3,$4,$5) ON CONFLICT (id) DO NOTHING`,
+        [c.id, c.name, c.slug, JSON.stringify(c.fields), c.createdAt]
+      )
+    }
+    for (const e of seedEntries) {
+      await pool.query(
+        `INSERT INTO entries (id,collection_id,title,slug,data,status,updated_at,created_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT (id) DO NOTHING`,
+        [e.id, e.collectionId, e.title, e.slug, JSON.stringify(e.data), e.status, e.updatedAt, e.createdAt]
       )
     }
   }

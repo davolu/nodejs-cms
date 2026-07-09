@@ -26,6 +26,20 @@ export default function WidgetFields({ block, onUpdate }: { block: Block; onUpda
   )
 }
 
+function CollectionPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [items, setItems] = useState<{ id: string; name: string }[]>([])
+  useEffect(() => { fetch('/api/collections').then((r) => r.json()).then((d) => setItems(Array.isArray(d) ? d : [])).catch(() => {}) }, [])
+  return (
+    <div>
+      <select className="input" value={value} onChange={(e) => onChange(e.target.value)}>
+        <option value="">— Choose a collection —</option>
+        {items.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+      </select>
+      <p className="mt-1 text-xs text-slate-400">Manage content types under <span className="font-medium">Collections</span>.</p>
+    </div>
+  )
+}
+
 function GlobalBlockPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const [items, setItems] = useState<{ id: string; name: string }[]>([])
   useEffect(() => { fetch('/api/blocks').then((r) => r.json()).then((d) => setItems(Array.isArray(d) ? d : [])).catch(() => {}) }, [])
@@ -50,6 +64,7 @@ function FieldInput({ field: f, value, onChange }: { field: Field; value: any; o
   if (f.type === 'number') return <input type="number" className="input" value={value ?? 0} onChange={(e) => onChange(Number(e.target.value))} />
   if (f.type === 'url') return <MediaInput value={value ?? ''} onChange={onChange} placeholder={f.placeholder} />
   if (f.type === 'globalblock') return <GlobalBlockPicker value={value ?? ''} onChange={onChange} />
+  if (f.type === 'collection') return <CollectionPicker value={value ?? ''} onChange={onChange} />
   if (f.type === 'items') return <ItemsEditor field={f} value={Array.isArray(value) ? value : []} onChange={onChange} />
   return <input className="input" value={value ?? ''} onChange={(e) => onChange(e.target.value)} placeholder={f.placeholder} />
 }

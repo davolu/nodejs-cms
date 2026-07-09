@@ -1,8 +1,8 @@
 import { hasDb, query } from './db'
 import type { Block } from './blocks'
 import {
-  Page, Post, MediaItem, Setting, Submission, User, Product, Order, GlobalBlock,
-  seedPages, seedPosts, seedMedia, seedSettings, seedSubmissions, seedUsers, seedProducts, seedGlobalBlocks,
+  Page, Post, MediaItem, Setting, Submission, User, Product, Order, GlobalBlock, Collection, Entry,
+  seedPages, seedPosts, seedMedia, seedSettings, seedSubmissions, seedUsers, seedProducts, seedGlobalBlocks, seedCollections, seedEntries,
 } from './seed'
 
 // ── In-memory fallback stores (deep-cloned so mutations don't touch the seed) ──
@@ -16,6 +16,8 @@ const mem = {
   products: seedProducts.map((x) => ({ ...x })),
   orders: [] as Order[],
   globalBlocks: seedGlobalBlocks.map((x) => ({ ...x })),
+  collections: seedCollections.map((x) => ({ ...x })),
+  entries: seedEntries.map((x) => ({ ...x })),
 }
 
 const now = () => new Date().toISOString()
@@ -428,6 +430,81 @@ export const ordersRepo = {
   async markPaid(id: string): Promise<void> {
     if (hasDb()) await query('UPDATE orders SET status=$2 WHERE id=$1', [id, 'paid'])
     else { const o = mem.orders.find((x) => x.id === id); if (o) o.status = 'paid' }
+  },
+}
+
+// ────────────────────────  COLLECTIONS + ENTRIES  ──────────────────
+const toCollection = (r: any): Collection => ({
+  id: r.id, name: r.name, slug: r.slug,
+  fields: Array.isArray(r.fields) ? r.fields : (typeof r.fields === 'string' ? JSON.parse(r.fields || '[]') : []),
+  createdAt: new Date(r.created_at).toISOString(),
+})
+export const collectionsRepo = {
+  async list(): Promise<Collection[]> {
+    if (hasDb()) return (await query('SELECT * FROM collections ORDER BY name')).map(toCollection)
+    return [...mem.collections].sort((a, b) => a.name.localeCompare(b.name))
+  },
+  async get(id: string): Promise<Collection | null> {
+    if (hasDb()) { const r = await query('SELECT * FROM collections WHERE id=$1 OR slug=$1', [id]); return r[0] ? toCollection(r[0]) : null }
+    return mem.collections.find((c) => c.id === id || c.slug === id) ?? null
+  },
+  async create(input: Partial<Collection>): Promise<Collection> {
+    const c: Collection = { id: newId('col'), name: input.name || 'Untitled', slug: input.slug || slugify(input.name || 'collection'), fields: input.fields || [], createdAt: now() }
+    if (hasDb()) await query('INSERT INTO collections (id,name,slug,fields,created_at) VALUES ($1,$2,$3,$4,$5)', [c.id, c.name, c.slug, JSON.stringify(c.fields), c.createdAt])
+    else mem.collections.unshift(c)
+    return c
+  },
+  async update(id: string, input: Partial<Collection>): Promise<Collection | null> {
+    const existing = await this.get(id); if (!existing) return null
+    const m: Collection = { ...existing, ...input, id }
+    if (hasDb()) await query('UPDATE collections SET name=$2,slug=$3,fields=$4 WHERE id=$1', [id, m.name, m.slug, JSON.stringify(m.fields)])
+    else { const i = mem.collections.findIndex((x) => x.id === id); mem.collections[i] = m }
+    return m
+  },
+  async remove(id: string): Promise<boolean> {
+    if (hasDb()) { await query('DELETE FROM entries WHERE collection_id=$1', [id]); return (await query('DELETE FROM collections WHERE id=$1 RETURNING id', [id])).length > 0 }
+    mem.entries = mem.entries.filter((e) => e.collectionId !== id)
+    const i = mem.collections.findIndex((c) => c.id === id); if (i === -1) return false; mem.collections.splice(i, 1); return true
+  },
+}
+
+const toEntry = (r: any): Entry => ({
+  id: r.id, collectionId: r.collection_id, title: r.title, slug: r.slug,
+  data: typeof r.data === 'string' ? JSON.parse(r.data || '{}') : (r.data || {}),
+  status: r.status, updatedAt: new Date(r.updated_at).toISOString(), createdAt: new Date(r.created_at).toISOString(),
+})
+export const entriesRepo = {
+  async listByCollection(collectionId: string, onlyPublished = false): Promise<Entry[]> {
+    let rows: Entry[]
+    if (hasDb()) rows = (await query('SELECT * FROM entries WHERE collection_id=$1 ORDER BY created_at DESC', [collectionId])).map(toEntry)
+    else rows = mem.entries.filter((e) => e.collectionId === collectionId).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    return onlyPublished ? rows.filter((e) => e.status === 'published') : rows
+  },
+  async get(id: string): Promise<Entry | null> {
+    if (hasDb()) { const r = await query('SELECT * FROM entries WHERE id=$1', [id]); return r[0] ? toEntry(r[0]) : null }
+    return mem.entries.find((e) => e.id === id) ?? null
+  },
+  async create(input: Partial<Entry>): Promise<Entry> {
+    const e: Entry = {
+      id: newId('ent'), collectionId: input.collectionId!, title: input.title || 'Untitled',
+      slug: input.slug || slugify(input.title || 'entry'), data: input.data || {},
+      status: (input.status as 'draft' | 'published') || 'published', updatedAt: now(), createdAt: now(),
+    }
+    if (hasDb()) await query('INSERT INTO entries (id,collection_id,title,slug,data,status,updated_at,created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
+      [e.id, e.collectionId, e.title, e.slug, JSON.stringify(e.data), e.status, e.updatedAt, e.createdAt])
+    else mem.entries.unshift(e)
+    return e
+  },
+  async update(id: string, input: Partial<Entry>): Promise<Entry | null> {
+    const existing = await this.get(id); if (!existing) return null
+    const m: Entry = { ...existing, ...input, id, updatedAt: now() }
+    if (hasDb()) await query('UPDATE entries SET title=$2,slug=$3,data=$4,status=$5,updated_at=$6 WHERE id=$1', [id, m.title, m.slug, JSON.stringify(m.data), m.status, m.updatedAt])
+    else { const i = mem.entries.findIndex((x) => x.id === id); mem.entries[i] = m }
+    return m
+  },
+  async remove(id: string): Promise<boolean> {
+    if (hasDb()) return (await query('DELETE FROM entries WHERE id=$1 RETURNING id', [id])).length > 0
+    const i = mem.entries.findIndex((e) => e.id === id); if (i === -1) return false; mem.entries.splice(i, 1); return true
   },
 }
 

@@ -101,3 +101,22 @@ CREATE TABLE IF NOT EXISTS global_blocks (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+CREATE TABLE IF NOT EXISTS collections (
+  id         TEXT PRIMARY KEY,
+  name       TEXT NOT NULL,
+  slug       TEXT NOT NULL UNIQUE,
+  fields     JSONB NOT NULL DEFAULT '[]'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS entries (
+  id            TEXT PRIMARY KEY,
+  collection_id TEXT NOT NULL,
+  title         TEXT NOT NULL DEFAULT '',
+  slug          TEXT NOT NULL DEFAULT '',
+  data          JSONB NOT NULL DEFAULT '{}'::jsonb,
+  status        TEXT NOT NULL DEFAULT 'published',
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_entries_collection ON entries(collection_id);

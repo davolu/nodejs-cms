@@ -52,6 +52,42 @@ export interface GlobalBlock {
   createdAt: string
 }
 
+export type CollectionFieldType = 'text' | 'textarea' | 'image' | 'url' | 'number' | 'date' | 'boolean'
+export interface CollectionField { key: string; label: string; type: CollectionFieldType }
+export interface Collection {
+  id: string
+  name: string
+  slug: string
+  fields: CollectionField[]
+  createdAt: string
+}
+export interface Entry {
+  id: string
+  collectionId: string
+  title: string
+  slug: string
+  data: Record<string, any>
+  status: Status
+  updatedAt: string
+  createdAt: string
+}
+
+export const seedCollections: Collection[] = [
+  {
+    id: 'col_projects', name: 'Projects', slug: 'projects',
+    fields: [
+      { key: 'image', label: 'Cover image', type: 'image' },
+      { key: 'summary', label: 'Summary', type: 'textarea' },
+      { key: 'link', label: 'Link', type: 'url' },
+    ],
+    createdAt: new Date('2026-01-06').toISOString(),
+  },
+]
+export const seedEntries: Entry[] = [
+  { id: 'ent_1', collectionId: 'col_projects', title: 'Acme Redesign', slug: 'acme-redesign', data: { image: 'https://picsum.photos/seed/proj1/800/600', summary: 'A full brand and website refresh.', link: '#' }, status: 'published', updatedAt: new Date('2026-01-07').toISOString(), createdAt: new Date('2026-01-07').toISOString() },
+  { id: 'ent_2', collectionId: 'col_projects', title: 'Mobile App Launch', slug: 'mobile-app-launch', data: { image: 'https://picsum.photos/seed/proj2/800/600', summary: 'Shipped an iOS + Android app in 8 weeks.', link: '#' }, status: 'published', updatedAt: new Date('2026-01-06').toISOString(), createdAt: new Date('2026-01-06').toISOString() },
+]
+
 export const seedGlobalBlocks: GlobalBlock[] = [
   {
     id: 'gb_cta',
