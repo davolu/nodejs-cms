@@ -46,3 +46,9 @@ export function getMemberId(): string | null {
 }
 
 export { MAX_AGE as MEMBER_MAX_AGE }
+
+// Role hierarchy: member < manager < admin.
+export const ROLE_RANK: Record<string, number> = { member: 1, manager: 2, admin: 3 }
+export function roleAtLeast(role: string | undefined, min: string): boolean {
+  return (ROLE_RANK[role || 'member'] || 1) >= (ROLE_RANK[min] || 1)
+}

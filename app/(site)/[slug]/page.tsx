@@ -4,9 +4,11 @@ import { pagesRepo, expandGlobals, usersRepo } from '@/lib/store'
 import { getSiteMeta } from '@/lib/site-meta'
 import { isAuthed } from '@/lib/auth'
 import { getMemberId } from '@/lib/members'
+import { roleAtLeast } from '@/lib/members'
 import BlockRenderer from '@/components/BlockRenderer'
 import PreviewBanner from '@/components/PreviewBanner'
 import MembersGate from '@/components/site/MembersGate'
+import RoleGate from '@/components/site/RoleGate'
 import Paywall from '@/components/site/Paywall'
 
 export const dynamic = 'force-dynamic'
@@ -18,7 +20,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   const title = page.metaTitle || page.title
   const description = page.metaDescription || meta.description
   const canonical = `/${page.slug}`
-  const noindex = page.status !== 'published' || page.access === 'members' || page.access === 'subscribers'
+  const noindex = page.status !== 'published' || page.access !== 'public'
   return {
     title, description,
     alternates: { canonical },
@@ -43,8 +45,10 @@ export default async function PublicPage({
 
   const memberId = getMemberId()
   const member = memberId ? await usersRepo.findById(memberId) : null
-  const needsLogin = (page.access === 'members' || page.access === 'subscribers') && !member && !isPreview
+  const roleGated = page.access === 'managers' || page.access === 'admins'
+  const needsLogin = (page.access === 'members' || page.access === 'subscribers' || roleGated) && !member && !isPreview
   const needsSubscription = page.access === 'subscribers' && member && !member.subscribed && !isPreview
+  const needsRole = roleGated && member && !roleAtLeast(member.role, page.access === 'admins' ? 'admin' : 'manager') && !isPreview
   const leadsWithHero = page.blocks[0]?.type === 'hero'
   const blocks = await expandGlobals(page.blocks)
 
@@ -57,6 +61,8 @@ export default async function PublicPage({
       )}
       {needsLogin ? (
         <MembersGate title={page.title} theme={page.theme} />
+      ) : needsRole ? (
+        <RoleGate title={page.title} theme={page.theme} required={page.access === 'admins' ? 'admin' : 'manager'} />
       ) : needsSubscription ? (
         <Paywall title={page.title} theme={page.theme} />
       ) : (

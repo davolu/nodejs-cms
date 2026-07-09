@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { Trash2, UserRound } from 'lucide-react'
 import { PageHeader, EmptyState, fmtDate } from '@/components/ui'
 
-interface Member { id: string; email: string; name: string; subscribed?: boolean; plan?: string; createdAt: string }
+interface Member { id: string; email: string; name: string; subscribed?: boolean; plan?: string; role?: string; createdAt: string }
 
 export default function MembersPage() {
   const [items, setItems] = useState<Member[]>([])
@@ -23,6 +23,10 @@ export default function MembersPage() {
     await fetch(`/api/members/${id}`, { method: 'DELETE' })
     setItems((x) => x.filter((m) => m.id !== id))
   }
+  async function setRole(id: string, role: string) {
+    setItems((x) => x.map((m) => (m.id === id ? { ...m, role } : m)))
+    await fetch(`/api/members/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role }) })
+  }
 
   return (
     <div>
@@ -38,6 +42,7 @@ export default function MembersPage() {
               <tr className="border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-400">
                 <th className="px-5 py-3 font-medium">Name</th>
                 <th className="px-5 py-3 font-medium">Email</th>
+                <th className="px-5 py-3 font-medium">Role</th>
                 <th className="px-5 py-3 font-medium">Plan</th>
                 <th className="hidden px-5 py-3 font-medium sm:table-cell">Joined</th>
                 <th className="px-5 py-3" />
@@ -53,6 +58,14 @@ export default function MembersPage() {
                     </span>
                   </td>
                   <td className="px-5 py-3 text-slate-600">{m.email}</td>
+                  <td className="px-5 py-3">
+                    <select value={m.role || 'member'} onChange={(e) => setRole(m.id, e.target.value)}
+                      className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-slate-700">
+                      <option value="member">Member</option>
+                      <option value="manager">Manager</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </td>
                   <td className="px-5 py-3">{m.subscribed ? <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-600">{m.plan || 'Subscribed'}</span> : <span className="text-xs text-slate-400">Free</span>}</td>
                   <td className="hidden px-5 py-3 text-slate-500 sm:table-cell">{fmtDate(m.createdAt)}</td>
                   <td className="px-5 py-3 text-right">

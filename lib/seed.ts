@@ -8,7 +8,7 @@ export interface Page {
   slug: string
   blocks: Block[]
   theme: string
-  access: 'public' | 'members' | 'subscribers'
+  access: 'public' | 'members' | 'subscribers' | 'managers' | 'admins'
   template: string
   metaTitle: string
   metaDescription: string
@@ -108,6 +108,7 @@ export interface User {
   subscribed: boolean
   plan: string
   stripeCustomerId: string
+  role: 'member' | 'manager' | 'admin'
   createdAt: string
 }
 
@@ -152,6 +153,7 @@ export const seedUsers: User[] = [
     subscribed: false,
     plan: '',
     stripeCustomerId: '',
+    role: 'member',
     createdAt: new Date('2026-01-01').toISOString(),
   },
 ]

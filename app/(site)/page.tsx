@@ -1,9 +1,10 @@
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import { pagesRepo, resolveHomePage, expandGlobals, usersRepo } from '@/lib/store'
-import { getMemberId } from '@/lib/members'
+import { getMemberId, roleAtLeast } from '@/lib/members'
 import BlockRenderer from '@/components/BlockRenderer'
 import MembersGate from '@/components/site/MembersGate'
+import RoleGate from '@/components/site/RoleGate'
 import Paywall from '@/components/site/Paywall'
 import Reveal from '@/components/site/Reveal'
 
@@ -13,11 +14,13 @@ export default async function Home() {
   const home = await resolveHomePage()
 
   if (home && home.status === 'published') {
-    if (home.access === 'members' || home.access === 'subscribers') {
+    const roleGated = home.access === 'managers' || home.access === 'admins'
+    if (home.access === 'members' || home.access === 'subscribers' || roleGated) {
       const memberId = getMemberId()
       const member = memberId ? await usersRepo.findById(memberId) : null
       if (!member) return <MembersGate title={home.title} theme={home.theme} />
       if (home.access === 'subscribers' && !member.subscribed) return <Paywall title={home.title} theme={home.theme} />
+      if (roleGated && !roleAtLeast(member.role, home.access === 'admins' ? 'admin' : 'manager')) return <RoleGate title={home.title} theme={home.theme} required={home.access === 'admins' ? 'admin' : 'manager'} />
     }
     const blocks = await expandGlobals(home.blocks)
     return <BlockRenderer blocks={blocks} theme={home.theme} />

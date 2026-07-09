@@ -309,7 +309,7 @@ export const submissionsRepo = {
 // ────────────────────────────  USERS (members)  ────────────────────
 const toUser = (r: any): User => ({
   id: r.id, email: r.email, name: r.name, passwordHash: r.password_hash,
-  subscribed: !!r.subscribed, plan: r.plan || '', stripeCustomerId: r.stripe_customer_id || '',
+  subscribed: !!r.subscribed, plan: r.plan || '', stripeCustomerId: r.stripe_customer_id || '', role: r.role || 'member',
   createdAt: new Date(r.created_at).toISOString(),
 })
 export const usersRepo = {
@@ -334,7 +334,7 @@ export const usersRepo = {
       email: input.email.trim().toLowerCase(),
       name: (input.name || '').trim(),
       passwordHash: input.passwordHash,
-      subscribed: false, plan: '', stripeCustomerId: '',
+      subscribed: false, plan: '', stripeCustomerId: '', role: 'member',
       createdAt: now(),
     }
     if (hasDb()) {
@@ -344,6 +344,10 @@ export const usersRepo = {
       mem.users.push(user)
     }
     return user
+  },
+  async setRole(id: string, role: 'member' | 'manager' | 'admin'): Promise<void> {
+    if (hasDb()) await query('UPDATE users SET role=$2 WHERE id=$1', [id, role])
+    else { const u = mem.users.find((x) => x.id === id); if (u) u.role = role }
   },
   async setSubscription(id: string, sub: { subscribed: boolean; plan?: string; stripeCustomerId?: string }): Promise<void> {
     if (hasDb()) await query('UPDATE users SET subscribed=$2, plan=$3, stripe_customer_id=$4 WHERE id=$1',
