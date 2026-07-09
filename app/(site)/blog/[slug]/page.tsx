@@ -6,6 +6,7 @@ import { postsRepo } from '@/lib/store'
 import { isAuthed } from '@/lib/auth'
 import { fmtDate } from '@/components/ui'
 import PreviewBanner from '@/components/PreviewBanner'
+import Reveal from '@/components/site/Reveal'
 
 export const dynamic = 'force-dynamic'
 
@@ -31,20 +32,31 @@ export default async function BlogPost({
   const paragraphs = post.body.split('\n').filter((line) => line.trim().length > 0)
 
   return (
-    <article className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
-      {isPreview && <PreviewBanner backHref={`/admin/posts/${post.id}/edit`} />}
-      <Link href="/blog" className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800">
-        <ArrowLeft className="h-4 w-4" /> All posts
-      </Link>
-      <h1 className="mt-4 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">{post.title}</h1>
-      <p className="mt-2 text-sm text-slate-400">{fmtDate(post.updatedAt)}</p>
+    <article className="pb-24">
+      <div className="mx-auto max-w-3xl px-6 pt-10">
+        {isPreview && <PreviewBanner backHref={`/admin/posts/${post.id}/edit`} />}
+        <Link href="/blog" className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-900">
+          <ArrowLeft className="h-4 w-4" /> All posts
+        </Link>
+        <p className="mt-8 text-sm font-semibold uppercase tracking-widest text-brand-600">{fmtDate(post.updatedAt)}</p>
+        <h1 className="site-heading mt-3 text-4xl font-bold leading-[1.1] tracking-tight text-slate-900 sm:text-5xl">{post.title}</h1>
+        {post.excerpt && <p className="mt-4 text-xl leading-relaxed text-slate-500">{post.excerpt}</p>}
+      </div>
+
       {post.featuredImage && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={post.featuredImage} alt={post.title} className="mt-6 w-full rounded-xl object-cover" />
+        <Reveal className="mx-auto mt-10 max-w-5xl px-6">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={post.featuredImage} alt={post.title} className="aspect-[16/9] w-full rounded-3xl object-cover shadow-2xl shadow-slate-900/10 ring-1 ring-slate-900/5" />
+        </Reveal>
       )}
-      <div className="mt-6 space-y-4">
+
+      <div className="mx-auto mt-12 max-w-2xl space-y-6 px-6">
         {paragraphs.map((para, i) => (
-          <p key={i} className="text-[17px] leading-relaxed text-slate-700">{para}</p>
+          <Reveal key={i} delay={i * 40}>
+            <p className={`leading-8 text-slate-700 ${i === 0 ? 'text-xl first-letter:float-left first-letter:mr-2 first-letter:text-6xl first-letter:font-bold first-letter:text-brand-600 first-letter:leading-[0.85] first-letter:font-display' : 'text-lg'}`}>
+              {para}
+            </p>
+          </Reveal>
         ))}
       </div>
     </article>

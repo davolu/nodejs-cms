@@ -26,13 +26,23 @@ export default async function PublicPage({
   const isPreview = searchParams?.preview === '1' && isAuthed()
   if (page.status !== 'published' && !isPreview) notFound()
 
+  const leadsWithHero = page.blocks[0]?.type === 'hero'
+
   return (
-    <article className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
-      {isPreview && <PreviewBanner backHref={`/admin/pages/${page.id}/edit`} />}
-      {page.slug !== 'home' && (
-        <h1 className="mb-6 text-3xl font-bold tracking-tight text-slate-900">{page.title}</h1>
+    <>
+      {isPreview && (
+        <div className="mx-auto max-w-3xl px-6 pt-6">
+          <PreviewBanner backHref={`/admin/pages/${page.id}/edit`} />
+        </div>
+      )}
+      {!leadsWithHero && (
+        <section className="border-b border-slate-100 bg-gradient-to-b from-slate-50 to-white py-16">
+          <div className="mx-auto max-w-3xl px-6">
+            <h1 className="site-heading text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">{page.title}</h1>
+          </div>
+        </section>
       )}
       <BlockRenderer blocks={page.blocks} />
-    </article>
+    </>
   )
 }

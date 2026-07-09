@@ -4,13 +4,18 @@
 
 :root {
   --bg: #f8fafc;
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif;
+  --font-sans: 'Inter Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-display: 'Space Grotesk Variable', var(--font-sans);
 }
 
 @layer base {
-  html { -webkit-font-smoothing: antialiased; }
+  html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
   body { @apply bg-slate-50 text-slate-800; }
   *:focus-visible { @apply outline-none ring-2 ring-brand-500 ring-offset-1; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
 }
 
 @layer components {
@@ -31,7 +36,52 @@
            placeholder:text-slate-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-100;
   }
   .field-hint { @apply mt-1 text-xs text-slate-400; }
+
+  /* ── Public site helpers ── */
+  .site-heading { font-family: var(--font-display); @apply tracking-tight; }
+
+  .gradient-ink {
+    background-image: linear-gradient(120deg, #4f46e5 0%, #7c3aed 45%, #d946ef 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .cta {
+    @apply relative inline-flex items-center gap-2 overflow-hidden rounded-full px-6 py-3
+           text-sm font-semibold text-white shadow-lg shadow-brand-600/25 transition-transform
+           duration-300 hover:-translate-y-0.5;
+    background-image: linear-gradient(120deg, #4f46e5, #7c3aed 55%, #d946ef);
+  }
+  .cta::after {
+    content: '';
+    @apply absolute inset-0;
+    background: linear-gradient(100deg, transparent 20%, rgba(255,255,255,0.35) 50%, transparent 80%);
+    transform: translateX(-120%);
+  }
+  .cta:hover::after { animation: shine 0.9s ease; }
+
+  @keyframes shine { 0% { transform: translateX(-120%); } 100% { transform: translateX(120%); } }
+
+  .link-underline {
+    background-image: linear-gradient(currentColor, currentColor);
+    background-size: 0% 1.5px;
+    background-position: 0 100%;
+    background-repeat: no-repeat;
+    transition: background-size 0.3s ease;
+  }
+  .link-underline:hover { background-size: 100% 1.5px; }
 }
 
-/* Hide the Next.js dev error toast in embedded previews */
+@layer utilities {
+  /* Reveal-on-scroll: hidden until .is-visible is added by the observer */
+  .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.7s cubic-bezier(0.16,1,0.3,1), transform 0.7s cubic-bezier(0.16,1,0.3,1); will-change: opacity, transform; }
+  .reveal.is-visible { opacity: 1; transform: none; }
+
+  .grid-dots {
+    background-image: radial-gradient(rgba(99,102,241,0.14) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+}
+
 nextjs-portal { display: none !important; }
