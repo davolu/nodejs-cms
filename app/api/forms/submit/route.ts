@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { submissionsRepo } from '@/lib/store'
+import { runFormAutomations } from '@/lib/automations'
 
 export const dynamic = 'force-dynamic'
 
@@ -44,6 +45,7 @@ export async function POST(req: NextRequest) {
   try {
     await submissionsRepo.create({ form, data: clean, page })
     await notify(form, clean, page)
+    await runFormAutomations(form, clean, page)
     return NextResponse.json({ ok: true })
   } catch (e: any) {
     return NextResponse.json({ error: 'Could not save submission.' }, { status: 500 })
