@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { PageHeader } from '@/components/ui'
-import { Sparkles, Loader2, ExternalLink, Pencil, ArrowRight } from 'lucide-react'
+import { Sparkles, Loader2, ExternalLink, Pencil, ArrowRight, Check, Database, FileText, Compass } from 'lucide-react'
 import Link from 'next/link'
 
 const EXAMPLES = [
@@ -13,21 +13,42 @@ const EXAMPLES = [
   'A SaaS marketing site with features, pricing, and a contact form',
 ]
 
+interface Step { step: string; message: string }
+const stepIcon = (s: string) => (s === 'collection' ? Database : s === 'page' ? FileText : s === 'nav' ? Compass : Check)
+
 export default function GenerateSitePage() {
   const [prompt, setPrompt] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState<any>(null)
+  const [steps, setSteps] = useState<Step[]>([])
+  const [current, setCurrent] = useState('')
 
   async function build() {
     if (!prompt.trim()) return
-    setLoading(true); setError(''); setResult(null)
+    setLoading(true); setError(''); setResult(null); setSteps([]); setCurrent('Planning your site with AI…')
     try {
       const res = await fetch('/api/ai/generate-site', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt }) })
-      const d = await res.json()
-      if (!res.ok) setError(d.error || 'Could not build the site.'); else setResult(d)
-    } catch { setError('Something went wrong. Try again.') }
-    setLoading(false)
+      if (!res.ok || !res.body) { const d = await res.json().catch(() => ({})); setError(d.error || 'Could not build the site.'); setLoading(false); return }
+      const reader = res.body.getReader()
+      const dec = new TextDecoder()
+      let buf = ''
+      while (true) {
+        const { value, done } = await reader.read()
+        if (done) break
+        buf += dec.decode(value, { stream: true })
+        const lines = buf.split('\n'); buf = lines.pop() || ''
+        for (const line of lines) {
+          if (!line.trim()) continue
+          let ev: any; try { ev = JSON.parse(line) } catch { continue }
+          if (ev.step === 'thinking') { setCurrent(ev.message) }
+          else if (ev.step === 'done') { setResult(ev.result); setCurrent('') }
+          else if (ev.step === 'error') { setError(ev.message); setCurrent('') }
+          else { setSteps((s) => [...s, ev]); setCurrent('') }
+        }
+      }
+    } catch { setError('The connection dropped. Try again.') }
+    setLoading(false); setCurrent('')
   }
 
   return (
@@ -48,7 +69,25 @@ export default function GenerateSitePage() {
             <button onClick={build} disabled={loading || !prompt.trim()} className="btn-primary mt-4">
               {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Building your site…</> : <><Sparkles className="h-4 w-4" /> Build my site</>}
             </button>
-            {loading && <p className="mt-2 text-xs text-slate-400">This can take up to a minute. It creates real pages you can edit afterward.</p>}
+            {(loading || steps.length > 0) && (
+              <div className="mt-4 space-y-2 rounded-xl border border-slate-100 bg-slate-50/60 p-4">
+                {steps.map((s, i) => {
+                  const Icon = stepIcon(s.step)
+                  return (
+                    <div key={i} className="flex items-center gap-2.5 text-sm text-slate-600">
+                      <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-emerald-100 text-emerald-600"><Icon className="h-3 w-3" /></span>
+                      {s.message}
+                    </div>
+                  )
+                })}
+                {loading && current && (
+                  <div className="flex items-center gap-2.5 text-sm text-slate-500">
+                    <Loader2 className="h-5 w-5 shrink-0 animate-spin text-brand-500" /> {current}
+                  </div>
+                )}
+              </div>
+            )}
+            {loading && !current && steps.length === 0 && <p className="mt-2 text-xs text-slate-400">This can take up to a minute.</p>}
             {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
           </div>
           <p className="mt-3 text-xs text-slate-400">Note: this adds new pages, navigation, and collections to your site. You can edit or delete anything afterward.</p>
