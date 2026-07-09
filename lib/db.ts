@@ -1,5 +1,5 @@
 import { Pool } from 'pg'
-import { seedPages, seedPosts, seedMedia, seedSettings, seedUsers } from './seed'
+import { seedPages, seedPosts, seedMedia, seedSettings, seedUsers, seedProducts } from './seed'
 import { SCHEMA_SQL } from './schema'
 
 // A single shared pool across hot-reloads / serverless invocations.
@@ -64,6 +64,13 @@ async function initOnce(): Promise<void> {
       await pool.query(
         `INSERT INTO users (id,email,name,password_hash,created_at) VALUES ($1,$2,$3,$4,$5) ON CONFLICT (email) DO NOTHING`,
         [u.id, u.email, u.name, u.passwordHash, u.createdAt]
+      )
+    }
+    for (const p of seedProducts) {
+      await pool.query(
+        `INSERT INTO products (id,name,slug,description,price,currency,image,active,created_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT (id) DO NOTHING`,
+        [p.id, p.name, p.slug, p.description, p.price, p.currency, p.image, p.active, p.createdAt]
       )
     }
   }

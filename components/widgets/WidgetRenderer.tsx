@@ -9,6 +9,7 @@ import {
 import type { Block } from '@/lib/blocks'
 import Reveal from '@/components/site/Reveal'
 import { widgetDef } from '@/lib/widgets'
+import { useCart, formatMoney } from '@/components/shop/CartProvider'
 
 const grad = { backgroundImage: 'linear-gradient(120deg, var(--from), var(--to))' }
 const solid = { backgroundColor: 'var(--solid)' }
@@ -234,6 +235,8 @@ export default function WidgetRenderer({ block }: { block: Block }) {
       return <FormWidget p={p} />
     case 'auth':
       return <AuthForm p={p} />
+    case 'products':
+      return <ProductGrid p={p} />
     case 'faq':
       return <Faq heading={p.heading} items={p.items || []} />
     case 'tabs':
@@ -375,6 +378,49 @@ function FormWidget({ p }: { p: any }) {
         )}
       </div>
     </Reveal>
+  )
+}
+
+interface ShopProduct { id: string; name: string; description: string; price: number; currency: string; image: string }
+function ProductGrid({ p }: { p: any }) {
+  const cart = useCart()
+  const [products, setProducts] = useState<ShopProduct[]>([])
+  const [loading, setLoading] = useState(true)
+  useEffect(() => {
+    fetch('/api/products').then((r) => r.json()).then((d) => setProducts(Array.isArray(d) ? d : [])).catch(() => setProducts([])).finally(() => setLoading(false))
+  }, [])
+  const cols = { '2': 'sm:grid-cols-2', '3': 'sm:grid-cols-2 lg:grid-cols-3', '4': 'sm:grid-cols-2 lg:grid-cols-4' }[p.columns as string] || 'sm:grid-cols-2 lg:grid-cols-3'
+
+  return (
+    <section className="px-6 py-12">
+      <div className="mx-auto max-w-6xl">
+        {p.heading && <h2 className="site-heading mb-8 text-center text-3xl font-bold text-slate-900 sm:text-4xl">{p.heading}</h2>}
+        {loading ? (
+          <div className="py-10 text-center text-sm text-slate-400">Loading products…</div>
+        ) : products.length === 0 ? (
+          <div className="py-10 text-center text-sm text-slate-400">No products yet. Add some in the admin under Products.</div>
+        ) : (
+          <div className={`grid grid-cols-1 gap-6 ${cols}`}>
+            {products.map((pr) => (
+              <div key={pr.id} className="group overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
+                <div className="aspect-square overflow-hidden bg-slate-100">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={pr.image} alt={pr.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                </div>
+                <div className="p-4">
+                  <h3 className="site-heading font-bold text-slate-900">{pr.name}</h3>
+                  {pr.description && <p className="mt-0.5 line-clamp-2 text-sm text-slate-500">{pr.description}</p>}
+                  <div className="mt-3 flex items-center justify-between">
+                    <span className="site-heading text-lg font-bold" style={{ color: 'var(--solid)' }}>{formatMoney(pr.price, pr.currency)}</span>
+                    <button onClick={() => cart.add({ id: pr.id, name: pr.name, price: pr.price, image: pr.image })} className="rounded-full px-4 py-2 text-sm font-semibold text-white" style={grad}>Add to cart</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
   )
 }
 

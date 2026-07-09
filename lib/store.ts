@@ -1,7 +1,7 @@
 import { hasDb, query } from './db'
 import {
-  Page, Post, MediaItem, Setting, Submission, User,
-  seedPages, seedPosts, seedMedia, seedSettings, seedSubmissions, seedUsers,
+  Page, Post, MediaItem, Setting, Submission, User, Product, Order,
+  seedPages, seedPosts, seedMedia, seedSettings, seedSubmissions, seedUsers, seedProducts,
 } from './seed'
 
 // ── In-memory fallback stores (deep-cloned so mutations don't touch the seed) ──
@@ -12,6 +12,8 @@ const mem = {
   settings: seedSettings.map((x) => ({ ...x })),
   submissions: seedSubmissions.map((x) => ({ ...x })),
   users: seedUsers.map((x) => ({ ...x })),
+  products: seedProducts.map((x) => ({ ...x })),
+  orders: [] as Order[],
 }
 
 const now = () => new Date().toISOString()
@@ -349,6 +351,81 @@ export const usersRepo = {
     if (i === -1) return false
     mem.users.splice(i, 1)
     return true
+  },
+}
+
+// ────────────────────────────  PRODUCTS  ───────────────────────────
+const toProduct = (r: any): Product => ({
+  id: r.id, name: r.name, slug: r.slug, description: r.description,
+  price: Number(r.price), currency: r.currency, image: r.image, active: !!r.active,
+  createdAt: new Date(r.created_at).toISOString(),
+})
+export const productsRepo = {
+  async list(onlyActive = false): Promise<Product[]> {
+    let rows: Product[]
+    if (hasDb()) rows = (await query('SELECT * FROM products ORDER BY created_at DESC')).map(toProduct)
+    else rows = [...mem.products].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    return onlyActive ? rows.filter((p) => p.active) : rows
+  },
+  async get(id: string): Promise<Product | null> {
+    if (hasDb()) { const r = await query('SELECT * FROM products WHERE id=$1', [id]); return r[0] ? toProduct(r[0]) : null }
+    return mem.products.find((p) => p.id === id) ?? null
+  },
+  async create(input: Partial<Product>): Promise<Product> {
+    const p: Product = {
+      id: newId('prd'), name: input.name || 'Untitled', slug: input.slug || slugify(input.name || 'product'),
+      description: input.description || '', price: Math.max(0, Math.round(Number(input.price) || 0)),
+      currency: input.currency || 'usd', image: input.image || '', active: input.active !== false,
+      createdAt: now(),
+    }
+    if (hasDb()) await query('INSERT INTO products (id,name,slug,description,price,currency,image,active,created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)',
+      [p.id, p.name, p.slug, p.description, p.price, p.currency, p.image, p.active, p.createdAt])
+    else mem.products.unshift(p)
+    return p
+  },
+  async update(id: string, input: Partial<Product>): Promise<Product | null> {
+    const existing = await this.get(id); if (!existing) return null
+    const m: Product = { ...existing, ...input, price: input.price != null ? Math.max(0, Math.round(Number(input.price))) : existing.price, id }
+    if (hasDb()) await query('UPDATE products SET name=$2,slug=$3,description=$4,price=$5,currency=$6,image=$7,active=$8 WHERE id=$1',
+      [id, m.name, m.slug, m.description, m.price, m.currency, m.image, m.active])
+    else { const i = mem.products.findIndex((x) => x.id === id); mem.products[i] = m }
+    return m
+  },
+  async remove(id: string): Promise<boolean> {
+    if (hasDb()) return (await query('DELETE FROM products WHERE id=$1 RETURNING id', [id])).length > 0
+    const i = mem.products.findIndex((p) => p.id === id); if (i === -1) return false; mem.products.splice(i, 1); return true
+  },
+}
+
+// ────────────────────────────  ORDERS  ─────────────────────────────
+const toOrder = (r: any): Order => ({
+  id: r.id, email: r.email,
+  items: typeof r.items === 'string' ? JSON.parse(r.items || '[]') : (r.items || []),
+  total: Number(r.total), currency: r.currency, status: r.status, stripeSession: r.stripe_session,
+  createdAt: new Date(r.created_at).toISOString(),
+})
+export const ordersRepo = {
+  async list(): Promise<Order[]> {
+    if (hasDb()) return (await query('SELECT * FROM orders ORDER BY created_at DESC LIMIT 500')).map(toOrder)
+    return [...mem.orders].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  },
+  async create(input: { email?: string; items: any[]; total: number; currency?: string; status?: 'pending' | 'paid'; stripeSession?: string }): Promise<Order> {
+    const o: Order = {
+      id: newId('ord'), email: input.email || '', items: input.items || [], total: input.total || 0,
+      currency: input.currency || 'usd', status: input.status || 'pending', stripeSession: input.stripeSession || '', createdAt: now(),
+    }
+    if (hasDb()) await query('INSERT INTO orders (id,email,items,total,currency,status,stripe_session,created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
+      [o.id, o.email, JSON.stringify(o.items), o.total, o.currency, o.status, o.stripeSession, o.createdAt])
+    else mem.orders.unshift(o)
+    return o
+  },
+  async findBySession(session: string): Promise<Order | null> {
+    if (hasDb()) { const r = await query('SELECT * FROM orders WHERE stripe_session=$1', [session]); return r[0] ? toOrder(r[0]) : null }
+    return mem.orders.find((o) => o.stripeSession === session) ?? null
+  },
+  async markPaid(id: string): Promise<void> {
+    if (hasDb()) await query('UPDATE orders SET status=$2 WHERE id=$1', [id, 'paid'])
+    else { const o = mem.orders.find((x) => x.id === id); if (o) o.status = 'paid' }
   },
 }
 

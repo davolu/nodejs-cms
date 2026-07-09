@@ -150,6 +150,11 @@ export const WIDGETS: WidgetDef[] = [
     defaults: { url: 'https://calendly.com/your-name/30min' },
     fields: [url('url', 'Calendly link')] },
 
+  // ── Shop ──
+  { type: 'products', label: 'Product Grid', category: 'Shop', icon: 'ShoppingBag', kind: 'products',
+    defaults: { heading: 'Shop', columns: '3' },
+    fields: [txt('heading', 'Heading'), { key: 'columns', label: 'Columns', type: 'select', options: ['2', '3', '4'] }] },
+
   // ── Members ──
   { type: 'authform', label: 'Login / Signup', category: 'Members', icon: 'UserRound', kind: 'auth',
     defaults: { heading: 'Members area' }, fields: [txt('heading', 'Heading')] },

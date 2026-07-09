@@ -1,5 +1,7 @@
 import Link from 'next/link'
 import { settingsRepo, pagesRepo } from '@/lib/store'
+import { CartProvider } from '@/components/shop/CartProvider'
+import CartButton from '@/components/shop/CartButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,6 +13,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
   const initial = siteTitle.trim().charAt(0).toUpperCase() || 'M'
 
   return (
+    <CartProvider>
     <div className="flex min-h-screen flex-col bg-white text-slate-900">
       <noscript>
         <style>{`.reveal{opacity:1 !important;transform:none !important}`}</style>
@@ -64,6 +67,8 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
           </div>
         </div>
       </footer>
+      <CartButton />
     </div>
+    </CartProvider>
   )
 }

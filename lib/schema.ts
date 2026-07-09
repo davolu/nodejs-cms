@@ -64,6 +64,30 @@ CREATE TABLE IF NOT EXISTS submissions (
 );
 CREATE INDEX IF NOT EXISTS idx_submissions_created ON submissions(created_at DESC);
 
+
+CREATE TABLE IF NOT EXISTS products (
+  id          TEXT PRIMARY KEY,
+  name        TEXT NOT NULL,
+  slug        TEXT NOT NULL UNIQUE,
+  description TEXT NOT NULL DEFAULT '',
+  price       INTEGER NOT NULL DEFAULT 0,
+  currency    TEXT NOT NULL DEFAULT 'usd',
+  image       TEXT NOT NULL DEFAULT '',
+  active       BOOLEAN NOT NULL DEFAULT true,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS orders (
+  id             TEXT PRIMARY KEY,
+  email          TEXT NOT NULL DEFAULT '',
+  items          JSONB NOT NULL DEFAULT '[]'::jsonb,
+  total          INTEGER NOT NULL DEFAULT 0,
+  currency       TEXT NOT NULL DEFAULT 'usd',
+  status         TEXT NOT NULL DEFAULT 'pending',
+  stripe_session TEXT NOT NULL DEFAULT '',
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_orders_created ON orders(created_at DESC);
+
 CREATE TABLE IF NOT EXISTS users (
   id            TEXT PRIMARY KEY,
   email         TEXT NOT NULL UNIQUE,

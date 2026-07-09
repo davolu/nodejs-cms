@@ -52,6 +52,37 @@ export interface User {
   createdAt: string
 }
 
+export interface Product {
+  id: string
+  name: string
+  slug: string
+  description: string
+  price: number   // in minor units (cents)
+  currency: string
+  image: string
+  active: boolean
+  createdAt: string
+}
+
+export interface OrderItem { productId: string; name: string; price: number; qty: number }
+export interface Order {
+  id: string
+  email: string
+  items: OrderItem[]
+  total: number
+  currency: string
+  status: 'pending' | 'paid'
+  stripeSession: string
+  createdAt: string
+}
+
+export const seedProducts: Product[] = [
+  { id: 'prd_tee', name: 'Classic Tee', slug: 'classic-tee', description: 'Soft 100% cotton t-shirt.', price: 2500, currency: 'usd', image: 'https://picsum.photos/seed/tee/600/600', active: true, createdAt: new Date('2026-01-05').toISOString() },
+  { id: 'prd_mug', name: 'Ceramic Mug', slug: 'ceramic-mug', description: '350ml matte-finish mug.', price: 1500, currency: 'usd', image: 'https://picsum.photos/seed/mug/600/600', active: true, createdAt: new Date('2026-01-04').toISOString() },
+  { id: 'prd_cap', name: 'Logo Cap', slug: 'logo-cap', description: 'Adjustable embroidered cap.', price: 2000, currency: 'usd', image: 'https://picsum.photos/seed/cap/600/600', active: true, createdAt: new Date('2026-01-03').toISOString() },
+  { id: 'prd_tote', name: 'Canvas Tote', slug: 'canvas-tote', description: 'Sturdy everyday tote bag.', price: 1800, currency: 'usd', image: 'https://picsum.photos/seed/tote/600/600', active: true, createdAt: new Date('2026-01-02').toISOString() },
+]
+
 // Demo member (in-memory mode): member@acme.com / member123
 export const seedUsers: User[] = [
   {
