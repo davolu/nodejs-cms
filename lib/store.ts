@@ -229,6 +229,10 @@ export const settingsRepo = {
     if (hasDb()) return (await query('SELECT * FROM settings ORDER BY key')).map(toSetting)
     return [...mem.settings].sort((a, b) => a.key.localeCompare(b.key))
   },
+  async get(key: string): Promise<string | null> {
+    const all = await this.list()
+    return all.find((s) => s.key === key)?.value ?? null
+  },
   async upsertMany(entries: { key: string; value: string }[]): Promise<Setting[]> {
     for (const e of entries) {
       if (hasDb()) {
@@ -247,7 +251,16 @@ export const settingsRepo = {
   },
 }
 
-// ────────────────────────────  DASHBOARD  ──────────────────────────
+// Resolve which page should render at "/" — the configured home page, falling
+// back to a page with slug 'home', then null (caller renders an index).
+export async function resolveHomePage(): Promise<Page | null> {
+  const homeId = await settingsRepo.get('home_page_id')
+  if (homeId) {
+    const byId = await pagesRepo.get(homeId)
+    if (byId) return byId
+  }
+  return pagesRepo.getBySlug('home')
+}
 export async function getStats() {
   const [pages, posts, media] = await Promise.all([pagesRepo.list(), postsRepo.list(), mediaRepo.list()])
   return {

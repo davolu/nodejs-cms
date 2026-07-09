@@ -1,7 +1,6 @@
 import { Pool } from 'pg'
-import fs from 'fs'
-import path from 'path'
 import { seedPages, seedPosts, seedMedia, seedSettings } from './seed'
+import { SCHEMA_SQL } from './schema'
 
 // A single shared pool across hot-reloads / serverless invocations.
 declare global {
@@ -30,9 +29,7 @@ export function getPool(): Pool {
 // Ensure the schema exists and seed once if the tables are empty.
 async function initOnce(): Promise<void> {
   const pool = getPool()
-  const schemaPath = path.join(process.cwd(), 'db', 'schema.sql')
-  const schema = fs.readFileSync(schemaPath, 'utf8')
-  await pool.query(schema)
+  await pool.query(SCHEMA_SQL)
 
   const { rows } = await pool.query('SELECT COUNT(*)::int AS c FROM pages')
   if (rows[0].c === 0) {

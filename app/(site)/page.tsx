@@ -1,11 +1,11 @@
 import Link from 'next/link'
-import { pagesRepo } from '@/lib/store'
+import { pagesRepo, resolveHomePage } from '@/lib/store'
 import BlockRenderer from '@/components/BlockRenderer'
 
 export const dynamic = 'force-dynamic'
 
 export default async function Home() {
-  const home = await pagesRepo.getBySlug('home')
+  const home = await resolveHomePage()
 
   if (home && home.status === 'published') {
     return (
@@ -15,8 +15,8 @@ export default async function Home() {
     )
   }
 
-  // Fallback: a simple index of published pages if no home page is set.
-  const pages = (await pagesRepo.list()).filter((p) => p.status === 'published' && p.slug !== 'home')
+  // Fallback: a simple index of published pages if no home page is set/published.
+  const pages = (await pagesRepo.list()).filter((p) => p.status === 'published' && p.id !== home?.id)
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
       <h1 className="text-3xl font-bold tracking-tight text-slate-900">Welcome</h1>

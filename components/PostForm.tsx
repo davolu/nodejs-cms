@@ -15,6 +15,7 @@ export default function PostForm({ initial }: Props) {
   const router = useRouter()
   const editing = !!initial
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
   const [slugTouched, setSlugTouched] = useState(editing)
   const [form, setForm] = useState({
     title: initial?.title ?? '',
@@ -35,13 +36,19 @@ export default function PostForm({ initial }: Props) {
   }
 
   async function persist(status?: 'draft' | 'published'): Promise<Post | null> {
+    setError('')
     const payload = { ...form, status: status ?? form.status }
     const res = await fetch(editing ? `/api/posts/${initial!.id}` : '/api/posts', {
       method: editing ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     })
-    return res.ok ? ((await res.json()) as Post) : null
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      setError(data.error || `Save failed (${res.status}). Please try again.`)
+      return null
+    }
+    return (await res.json()) as Post
   }
 
   async function save(status?: 'draft' | 'published') {
@@ -75,6 +82,8 @@ export default function PostForm({ initial }: Props) {
           </button>
         </div>
       </div>
+      {error && <p className="mb-4 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">{error}</p>}
+
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">

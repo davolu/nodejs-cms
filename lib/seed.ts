@@ -170,4 +170,5 @@ export const seedSettings: Setting[] = [
   { key: 'site_description', value: 'Tools that help teams ship faster.', updatedAt: iso('2026-01-01') },
   { key: 'site_url', value: 'https://acme.example.com', updatedAt: iso('2026-01-01') },
   { key: 'posts_per_page', value: '10', updatedAt: iso('2026-01-01') },
+  { key: 'home_page_id', value: 'pg_home', updatedAt: iso('2026-01-01') },
 ]

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Save, ArrowLeft, Eye } from 'lucide-react'
+import { Save, ArrowLeft, Eye, Sparkles, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import type { Page } from '@/lib/seed'
 import type { Block } from '@/lib/blocks'
@@ -17,6 +17,7 @@ export default function PageForm({ initial }: Props) {
   const router = useRouter()
   const editing = !!initial
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
   const [slugTouched, setSlugTouched] = useState(editing)
   const [blocks, setBlocks] = useState<Block[]>(initial?.blocks ?? [])
   const [form, setForm] = useState({
@@ -28,6 +29,12 @@ export default function PageForm({ initial }: Props) {
     status: initial?.status ?? 'draft',
   })
 
+  // AI generation state
+  const [aiOpen, setAiOpen] = useState(false)
+  const [aiPrompt, setAiPrompt] = useState('')
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiError, setAiError] = useState('')
+
   const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }))
 
   function onTitle(v: string) {
@@ -35,15 +42,52 @@ export default function PageForm({ initial }: Props) {
     if (!slugTouched) set('slug', slugify(v))
   }
 
-  // Persists the page and returns the saved record (used by both Save and Preview).
+  async function generate() {
+    if (!aiPrompt.trim()) return
+    setAiLoading(true)
+    setAiError('')
+    try {
+      const res = await fetch('/api/ai/generate-page', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: aiPrompt }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setAiError(data.error || 'Generation failed.')
+        return
+      }
+      setBlocks(data.blocks)
+      setForm((f) => ({
+        ...f,
+        title: f.title || data.title || '',
+        slug: !slugTouched && !f.slug ? slugify(data.title || f.title || '') : f.slug,
+        metaTitle: f.metaTitle || data.metaTitle || '',
+        metaDescription: f.metaDescription || data.metaDescription || '',
+      }))
+      setAiOpen(false)
+      setAiPrompt('')
+    } catch (e: any) {
+      setAiError('Could not reach the AI service.')
+    } finally {
+      setAiLoading(false)
+    }
+  }
+
   async function persist(status?: 'draft' | 'published'): Promise<Page | null> {
+    setError('')
     const payload = { ...form, blocks, status: status ?? form.status }
     const res = await fetch(editing ? `/api/pages/${initial!.id}` : '/api/pages', {
       method: editing ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     })
-    return res.ok ? ((await res.json()) as Page) : null
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      setError(data.error || `Save failed (${res.status}). Please try again.`)
+      return null
+    }
+    return (await res.json()) as Page
   }
 
   async function save(status?: 'draft' | 'published') {
@@ -55,7 +99,7 @@ export default function PageForm({ initial }: Props) {
 
   async function preview() {
     setSaving(true)
-    const saved = await persist() // save current state first so preview is accurate
+    const saved = await persist()
     setSaving(false)
     if (saved) window.open(`/${saved.slug}?preview=1`, '_blank')
   }
@@ -78,12 +122,41 @@ export default function PageForm({ initial }: Props) {
         </div>
       </div>
 
+      {error && <p className="mb-4 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">{error}</p>}
+
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Builder */}
         <div className="space-y-4 lg:col-span-2">
           <div className="card p-5">
             <label className="label">Title</label>
             <input className="input" value={form.title} onChange={(e) => onTitle(e.target.value)} placeholder="e.g. About Us" />
+          </div>
+
+          {/* AI generate */}
+          <div className="card border-brand-200 bg-brand-50/40 p-4">
+            {!aiOpen ? (
+              <button onClick={() => setAiOpen(true)} className="btn-outline w-full border-brand-200 text-brand-700 hover:bg-brand-50">
+                <Sparkles className="h-4 w-4" /> Generate this page with AI
+              </button>
+            ) : (
+              <div>
+                <label className="label flex items-center gap-1.5"><Sparkles className="h-4 w-4 text-brand-600" /> Describe the page</label>
+                <textarea
+                  className="input min-h-[70px]"
+                  value={aiPrompt}
+                  onChange={(e) => setAiPrompt(e.target.value)}
+                  placeholder="e.g. A landing page for a dog-walking service in Lagos, with a hero, benefits, and a booking call-to-action."
+                />
+                {aiError && <p className="mt-2 text-sm text-red-600">{aiError}</p>}
+                <div className="mt-2 flex gap-2">
+                  <button onClick={generate} disabled={aiLoading} className="btn-primary">
+                    {aiLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                    {aiLoading ? 'Generating…' : 'Generate'}
+                  </button>
+                  <button onClick={() => { setAiOpen(false); setAiError('') }} disabled={aiLoading} className="btn-ghost">Cancel</button>
+                </div>
+                <p className="field-hint">Generated blocks replace the current content. You can then edit and reorder them.</p>
+              </div>
+            )}
           </div>
 
           <div>
@@ -104,7 +177,6 @@ export default function PageForm({ initial }: Props) {
           </div>
         </div>
 
-        {/* Settings */}
         <div className="space-y-4">
           <div className="card p-5">
             <label className="label">Status</label>
