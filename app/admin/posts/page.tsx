@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, Pencil } from 'lucide-react'
 import type { Post } from '@/lib/seed'
 import { PageHeader, StatusBadge, EmptyState, fmtDate } from '@/components/ui'
 
@@ -55,9 +55,14 @@ export default function PostsListPage() {
                 <p className="mt-1 line-clamp-2 text-sm text-slate-500">{p.excerpt}</p>
                 <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3">
                   <span className="font-mono text-xs text-slate-400">/{p.slug}</span>
-                  <button onClick={() => remove(p.id)} className="btn-danger !px-2 !py-1" aria-label="Delete post">
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <Link href={`/admin/posts/${p.id}/edit`} className="btn-ghost !px-2 !py-1 text-slate-500 hover:text-brand-700" aria-label="Edit post" title="Edit post">
+                      <Pencil className="h-4 w-4" />
+                    </Link>
+                    <button onClick={() => remove(p.id)} className="btn-danger !px-2 !py-1" aria-label="Delete post">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

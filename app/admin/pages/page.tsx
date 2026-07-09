@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Plus, Trash2, ExternalLink, Home } from 'lucide-react'
+import { Plus, Trash2, ExternalLink, Home, Pencil } from 'lucide-react'
 import type { Page } from '@/lib/seed'
 import { PageHeader, StatusBadge, EmptyState, fmtDate } from '@/components/ui'
 
@@ -90,6 +90,14 @@ export default function PagesListPage() {
                     <td className="hidden px-5 py-3 text-slate-500 md:table-cell">{fmtDate(p.updatedAt)}</td>
                     <td className="px-5 py-3">
                       <div className="flex items-center justify-end gap-1">
+                        <Link
+                          href={`/admin/pages/${p.id}/edit`}
+                          className="btn-ghost !px-2 text-slate-500 hover:text-brand-700"
+                          title="Edit page"
+                          aria-label="Edit page"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Link>
                         <button
                           onClick={() => setHome(p)}
                           className={`btn-ghost !px-2 ${isHome ? 'text-brand-600' : 'text-slate-400'}`}
