@@ -126,3 +126,14 @@ CREATE INDEX IF NOT EXISTS idx_entries_collection ON entries(collection_id);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS subscribed BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS plan TEXT NOT NULL DEFAULT '';
 ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_customer_id TEXT NOT NULL DEFAULT '';
+
+CREATE TABLE IF NOT EXISTS connections (
+  connector     TEXT PRIMARY KEY,
+  access_token  TEXT NOT NULL DEFAULT '',
+  refresh_token TEXT NOT NULL DEFAULT '',
+  expires_at    BIGINT NOT NULL DEFAULT 0,
+  scope         TEXT NOT NULL DEFAULT '',
+  account       JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);

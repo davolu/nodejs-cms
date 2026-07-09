@@ -18,6 +18,7 @@ const mem = {
   globalBlocks: seedGlobalBlocks.map((x) => ({ ...x })),
   collections: seedCollections.map((x) => ({ ...x })),
   entries: seedEntries.map((x) => ({ ...x })),
+  connections: [] as any[],
 }
 
 const now = () => new Date().toISOString()
@@ -512,6 +513,45 @@ export const entriesRepo = {
   async remove(id: string): Promise<boolean> {
     if (hasDb()) return (await query('DELETE FROM entries WHERE id=$1 RETURNING id', [id])).length > 0
     const i = mem.entries.findIndex((e) => e.id === id); if (i === -1) return false; mem.entries.splice(i, 1); return true
+  },
+}
+
+// ────────────────────────────  CONNECTIONS (OAuth)  ────────────────
+export interface Connection { connector: string; accessToken: string; refreshToken: string; expiresAt: number; scope: string; account: Record<string, any>; updatedAt: string }
+const toConnection = (r: any): Connection => ({
+  connector: r.connector, accessToken: r.access_token, refreshToken: r.refresh_token,
+  expiresAt: Number(r.expires_at), scope: r.scope || '',
+  account: typeof r.account === 'string' ? JSON.parse(r.account || '{}') : (r.account || {}),
+  updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : now(),
+})
+export const connectionsRepo = {
+  async list(): Promise<Connection[]> {
+    if (hasDb()) return (await query('SELECT * FROM connections')).map(toConnection)
+    return [...mem.connections]
+  },
+  async get(connector: string): Promise<Connection | null> {
+    if (hasDb()) { const r = await query('SELECT * FROM connections WHERE connector=$1', [connector]); return r[0] ? toConnection(r[0]) : null }
+    return mem.connections.find((c) => c.connector === connector) ?? null
+  },
+  async upsert(input: Connection): Promise<Connection> {
+    const c: Connection = { ...input, updatedAt: now() }
+    if (hasDb()) {
+      await query(
+        `INSERT INTO connections (connector,access_token,refresh_token,expires_at,scope,account,updated_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7)
+         ON CONFLICT (connector) DO UPDATE SET access_token=EXCLUDED.access_token, refresh_token=EXCLUDED.refresh_token,
+           expires_at=EXCLUDED.expires_at, scope=EXCLUDED.scope, account=EXCLUDED.account, updated_at=EXCLUDED.updated_at`,
+        [c.connector, c.accessToken, c.refreshToken, c.expiresAt, c.scope, JSON.stringify(c.account), c.updatedAt]
+      )
+    } else {
+      const i = mem.connections.findIndex((x) => x.connector === c.connector)
+      if (i >= 0) mem.connections[i] = c; else mem.connections.push(c)
+    }
+    return c
+  },
+  async remove(connector: string): Promise<boolean> {
+    if (hasDb()) return (await query('DELETE FROM connections WHERE connector=$1 RETURNING connector', [connector])).length > 0
+    const i = mem.connections.findIndex((c) => c.connector === connector); if (i === -1) return false; mem.connections.splice(i, 1); return true
   },
 }
 
