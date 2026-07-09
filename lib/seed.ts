@@ -35,6 +35,14 @@ export interface MediaItem {
 }
 export interface Setting { key: string; value: string; updatedAt: string }
 
+export interface Submission {
+  id: string
+  form: string
+  data: Record<string, string>
+  page: string
+  createdAt: string
+}
+
 const iso = (d: string) => new Date(d).toISOString()
 
 export const seedPages: Page[] = [
@@ -136,4 +144,10 @@ export const seedSettings: Setting[] = [
   { key: 'site_url', value: 'https://acme.example.com', updatedAt: iso('2026-01-01') },
   { key: 'posts_per_page', value: '10', updatedAt: iso('2026-01-01') },
   { key: 'home_page_id', value: 'pg_home', updatedAt: iso('2026-01-01') },
+]
+
+// Demo submissions (shown only in in-memory mode; a real DB starts empty).
+export const seedSubmissions: Submission[] = [
+  { id: 'sub_1', form: 'Contact', data: { Name: 'Dana Cruz', Email: 'dana@example.com', Message: 'Loved the demo — can we talk pricing?' }, page: '/contact', createdAt: iso('2026-01-18') },
+  { id: 'sub_2', form: 'Newsletter', data: { Email: 'reader@example.com' }, page: '/', createdAt: iso('2026-01-17') },
 ]

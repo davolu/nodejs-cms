@@ -98,9 +98,19 @@ export const WIDGETS: WidgetDef[] = [
   { type: 'banner', label: 'Banner', category: 'Marketing', icon: 'Megaphone', kind: 'banner',
     defaults: { text: 'Limited-time offer — 20% off this week.', label: 'Claim offer', href: '#' },
     fields: [txt('text', 'Text'), txt('label', 'Button'), url('href', 'Button link')] },
-  { type: 'newsletter', label: 'Newsletter', category: 'Marketing', icon: 'Mail', kind: 'newsletter',
-    defaults: { heading: 'Join our newsletter', text: 'Get updates in your inbox. No spam.', label: 'Subscribe' },
-    fields: [txt('heading', 'Heading'), area('text', 'Text'), txt('label', 'Button label')] },
+
+  { type: 'newsletter', label: 'Newsletter', category: 'Forms', icon: 'Mail', kind: 'newsletter',
+    defaults: { heading: 'Join our newsletter', text: 'Get updates in your inbox. No spam.', label: 'Subscribe', success: 'Thanks for subscribing!' },
+    fields: [txt('heading', 'Heading'), area('text', 'Text'), txt('label', 'Button label'), txt('success', 'Success message')] },
+  { type: 'contactform', label: 'Contact Form', category: 'Forms', icon: 'MessageSquare', kind: 'form',
+    defaults: {
+      heading: 'Get in touch', formName: 'Contact', label: 'Send message', success: "Thanks! We'll be in touch shortly.",
+      fields: [{ label: 'Name', type: 'text' }, { label: 'Email', type: 'email' }, { label: 'Message', type: 'textarea' }],
+    },
+    fields: [
+      txt('heading', 'Heading'), txt('formName', 'Form name (shown in admin)'), txt('label', 'Button label'), txt('success', 'Success message'),
+      { key: 'fields', label: 'Form fields', type: 'items', itemFields: [txt('label', 'Field label'), { key: 'type', label: 'Type', type: 'select', options: ['text', 'email', 'tel', 'number', 'textarea'] }] },
+    ] },
 
   // ── Interactive ──
   { type: 'faq', label: 'FAQ', category: 'Interactive', icon: 'CircleHelp', kind: 'faq',

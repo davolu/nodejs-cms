@@ -1,7 +1,7 @@
 import { hasDb, query } from './db'
 import {
-  Page, Post, MediaItem, Setting,
-  seedPages, seedPosts, seedMedia, seedSettings,
+  Page, Post, MediaItem, Setting, Submission,
+  seedPages, seedPosts, seedMedia, seedSettings, seedSubmissions,
 } from './seed'
 
 // ── In-memory fallback stores (deep-cloned so mutations don't touch the seed) ──
@@ -10,6 +10,7 @@ const mem = {
   posts: seedPosts.map((x) => ({ ...x })),
   media: seedMedia.map((x) => ({ ...x })),
   settings: seedSettings.map((x) => ({ ...x })),
+  submissions: seedSubmissions.map((x) => ({ ...x })),
 }
 
 const now = () => new Date().toISOString()
@@ -250,6 +251,48 @@ export const settingsRepo = {
       }
     }
     return this.list()
+  },
+}
+
+// ────────────────────────────  SUBMISSIONS  ────────────────────────
+const toSubmission = (r: any): Submission => ({
+  id: r.id, form: r.form,
+  data: typeof r.data === 'string' ? JSON.parse(r.data || '{}') : (r.data || {}),
+  page: r.page, createdAt: new Date(r.created_at).toISOString(),
+})
+export const submissionsRepo = {
+  async list(): Promise<Submission[]> {
+    if (hasDb()) return (await query('SELECT * FROM submissions ORDER BY created_at DESC LIMIT 500')).map(toSubmission)
+    return [...mem.submissions].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  },
+  async create(input: { form?: string; data?: Record<string, string>; page?: string }): Promise<Submission> {
+    const sub: Submission = {
+      id: newId('sub'),
+      form: (input.form || 'Form').slice(0, 120),
+      data: input.data || {},
+      page: input.page || '',
+      createdAt: now(),
+    }
+    if (hasDb()) {
+      await query(`INSERT INTO submissions (id,form,data,page,created_at) VALUES ($1,$2,$3,$4,$5)`,
+        [sub.id, sub.form, JSON.stringify(sub.data), sub.page, sub.createdAt])
+    } else {
+      mem.submissions.unshift(sub)
+    }
+    return sub
+  },
+  async remove(id: string): Promise<boolean> {
+    if (hasDb()) {
+      const rows = await query('DELETE FROM submissions WHERE id=$1 RETURNING id', [id])
+      return rows.length > 0
+    }
+    const i = mem.submissions.findIndex((s) => s.id === id)
+    if (i === -1) return false
+    mem.submissions.splice(i, 1)
+    return true
+  },
+  async count(): Promise<number> {
+    return (await this.list()).length
   },
 }
 

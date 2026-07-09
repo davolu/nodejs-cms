@@ -229,18 +229,9 @@ export default function WidgetRenderer({ block }: { block: Block }) {
         </Reveal>
       )
     case 'newsletter':
-      return (
-        <Reveal className="mx-auto max-w-3xl px-6 py-14">
-          <div className="rounded-3xl p-8 text-center" style={tint}>
-            <h2 className="site-heading text-2xl font-bold text-slate-900 sm:text-3xl">{p.heading}</h2>
-            <p className="mt-2 text-slate-600">{p.text}</p>
-            <div className="mx-auto mt-6 flex max-w-md gap-2">
-              <input placeholder="you@example.com" className="w-full rounded-full border border-slate-300 px-4 py-2.5 text-sm focus:outline-none" />
-              <button className="shrink-0 rounded-full px-5 py-2.5 text-sm font-semibold text-white" style={grad}>{p.label || 'Subscribe'}</button>
-            </div>
-          </div>
-        </Reveal>
-      )
+      return <Newsletter p={p} />
+    case 'form':
+      return <FormWidget p={p} />
     case 'faq':
       return <Faq heading={p.heading} items={p.items || []} />
     case 'tabs':
@@ -297,6 +288,92 @@ export default function WidgetRenderer({ block }: { block: Block }) {
     default:
       return <div className="mx-auto max-w-3xl px-6 py-6 text-center text-sm text-slate-400">Unknown widget: {block.type}</div>
   }
+}
+
+function pagePath() {
+  return typeof window !== 'undefined' ? window.location.pathname : ''
+}
+
+function Newsletter({ p }: { p: any }) {
+  const [email, setEmail] = useState('')
+  const [gotcha, setGotcha] = useState('')
+  const [status, setStatus] = useState<'idle' | 'sending' | 'done' | 'error'>('idle')
+  async function submit(e: React.FormEvent) {
+    e.preventDefault()
+    setStatus('sending')
+    const res = await fetch('/api/forms/submit', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ form: 'Newsletter', data: { Email: email }, page: pagePath(), _gotcha: gotcha }),
+    }).catch(() => null)
+    setStatus(res && res.ok ? 'done' : 'error')
+    if (res && res.ok) setEmail('')
+  }
+  return (
+    <Reveal className="mx-auto max-w-3xl px-6 py-14">
+      <div className="rounded-3xl p-8 text-center" style={tint}>
+        <h2 className="site-heading text-2xl font-bold text-slate-900 sm:text-3xl">{p.heading}</h2>
+        <p className="mt-2 text-slate-600">{p.text}</p>
+        {status === 'done' ? (
+          <p className="mt-6 font-medium" style={{ color: 'var(--solid)' }}>{p.success || 'Thanks for subscribing!'}</p>
+        ) : (
+          <form onSubmit={submit} className="mx-auto mt-6 flex max-w-md gap-2">
+            <input type="text" tabIndex={-1} autoComplete="off" value={gotcha} onChange={(e) => setGotcha(e.target.value)} className="hidden" aria-hidden />
+            <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className="w-full rounded-full border border-slate-300 px-4 py-2.5 text-sm focus:outline-none" />
+            <button disabled={status === 'sending'} className="shrink-0 rounded-full px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60" style={grad}>{status === 'sending' ? '…' : (p.label || 'Subscribe')}</button>
+          </form>
+        )}
+        {status === 'error' && <p className="mt-2 text-sm text-red-600">Something went wrong. Please try again.</p>}
+      </div>
+    </Reveal>
+  )
+}
+
+function FormWidget({ p }: { p: any }) {
+  const fields: { label: string; type: string }[] = p.fields || []
+  const [values, setValues] = useState<Record<string, string>>({})
+  const [gotcha, setGotcha] = useState('')
+  const [status, setStatus] = useState<'idle' | 'sending' | 'done' | 'error'>('idle')
+  const set = (k: string, v: string) => setValues((s) => ({ ...s, [k]: v }))
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault()
+    setStatus('sending')
+    const res = await fetch('/api/forms/submit', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ form: p.formName || p.heading || 'Form', data: values, page: pagePath(), _gotcha: gotcha }),
+    }).catch(() => null)
+    setStatus(res && res.ok ? 'done' : 'error')
+  }
+
+  return (
+    <Reveal className="mx-auto max-w-xl px-6 py-12">
+      <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+        {p.heading && <h2 className="site-heading mb-6 text-2xl font-bold text-slate-900 sm:text-3xl">{p.heading}</h2>}
+        {status === 'done' ? (
+          <div className="py-6 text-center">
+            <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full text-white" style={grad}><Check className="h-6 w-6" /></div>
+            <p className="font-medium text-slate-800">{p.success || 'Thanks! Your message was sent.'}</p>
+          </div>
+        ) : (
+          <form onSubmit={submit} className="space-y-4">
+            <input type="text" tabIndex={-1} autoComplete="off" value={gotcha} onChange={(e) => setGotcha(e.target.value)} className="hidden" aria-hidden />
+            {fields.map((f, i) => (
+              <div key={i}>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">{f.label}</label>
+                {f.type === 'textarea'
+                  ? <textarea required value={values[f.label] || ''} onChange={(e) => set(f.label, e.target.value)} className="min-h-[110px] w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none" />
+                  : <input type={f.type || 'text'} required value={values[f.label] || ''} onChange={(e) => set(f.label, e.target.value)} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none" />}
+              </div>
+            ))}
+            {status === 'error' && <p className="text-sm text-red-600">Something went wrong. Please try again.</p>}
+            <button disabled={status === 'sending'} className="w-full rounded-full py-3 text-sm font-semibold text-white disabled:opacity-60" style={grad}>
+              {status === 'sending' ? 'Sending…' : (p.label || 'Submit')}
+            </button>
+          </form>
+        )}
+      </div>
+    </Reveal>
+  )
 }
 
 function ratioClass(r?: string): string {

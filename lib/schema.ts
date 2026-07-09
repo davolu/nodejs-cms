@@ -52,4 +52,13 @@ CREATE TABLE IF NOT EXISTS settings (
 
 CREATE INDEX IF NOT EXISTS idx_pages_status ON pages(status);
 CREATE INDEX IF NOT EXISTS idx_posts_status ON posts(status);
+
+CREATE TABLE IF NOT EXISTS submissions (
+  id          TEXT PRIMARY KEY,
+  form        TEXT NOT NULL DEFAULT '',
+  data        JSONB NOT NULL DEFAULT '{}'::jsonb,
+  page        TEXT NOT NULL DEFAULT '',
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_submissions_created ON submissions(created_at DESC);
 `
