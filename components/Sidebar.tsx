@@ -9,8 +9,8 @@ import {
 } from 'lucide-react'
 
 const nav = [
-  { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
   { href: '/admin/generate', label: 'Build with AI', icon: Sparkles },
+  { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
   { href: '/admin/pages', label: 'Pages', icon: FileText },
   { href: '/admin/posts', label: 'Posts', icon: Newspaper },
   { href: '/admin/blocks', label: 'Blocks', icon: Blocks },
