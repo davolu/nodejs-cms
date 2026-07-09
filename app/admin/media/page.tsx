@@ -19,22 +19,26 @@ export default function MediaPage() {
   }
   useEffect(() => { load() }, [])
 
-  // Simulates an upload by registering a new image record.
-  async function addImage() {
-    setUploading(true)
-    const n = Date.now()
-    const res = await fetch('/api/media', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        filename: `upload-${n.toString().slice(-5)}.jpg`,
-        url: `https://picsum.photos/seed/${n}/600/400`,
-        alt: 'Uploaded image',
-      }),
-    })
-    const created = await res.json()
-    setItems((x) => [created, ...x])
+  const [error, setError] = useState('')
+
+  async function uploadFiles(files: FileList | null) {
+    if (!files || files.length === 0) return
+    setUploading(true); setError('')
+    for (const file of Array.from(files)) {
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await fetch('/api/media/upload', { method: 'POST', body: fd })
+      if (res.ok) { const created = await res.json(); setItems((x) => [created, ...x]) }
+      else { const d = await res.json().catch(() => ({})); setError(d.error || 'Upload failed.') }
+    }
     setUploading(false)
+  }
+
+  async function addByUrl() {
+    const url = prompt('Paste an image URL:')
+    if (!url) return
+    const res = await fetch('/api/media', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url, filename: url.split('/').pop() || 'image', alt: '' }) })
+    if (res.ok) { const created = await res.json(); setItems((x) => [created, ...x]) }
   }
 
   async function remove(id: string) {
@@ -55,11 +59,17 @@ export default function MediaPage() {
         title="Media"
         subtitle="Images used across your pages and posts."
         action={
-          <button onClick={addImage} disabled={uploading} className="btn-primary shrink-0">
-            <Upload className="h-4 w-4" /> {uploading ? 'Uploading…' : 'Upload image'}
-          </button>
+          <div className="flex shrink-0 gap-2">
+            <button onClick={addByUrl} className="btn-outline">From URL</button>
+            <label className="btn-primary cursor-pointer">
+              <Upload className="h-4 w-4" /> {uploading ? 'Uploading…' : 'Upload'}
+              <input type="file" accept="image/*" multiple className="hidden" disabled={uploading} onChange={(e) => uploadFiles(e.target.files)} />
+            </label>
+          </div>
         }
       />
+
+      {error && <div className="mb-4 rounded-lg bg-red-50 px-4 py-2.5 text-sm text-red-600">{error}</div>}
 
       {loading ? (
         <div className="card p-10 text-center text-sm text-slate-400">Loading media…</div>

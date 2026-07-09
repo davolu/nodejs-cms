@@ -14,6 +14,7 @@ import { GripVertical, Trash2, Plus, X } from 'lucide-react'
 import { Block, BlockType, makeBlock, labelFor, variantsFor } from '@/lib/blocks'
 import { isWidget } from '@/lib/widgets'
 import WidgetFields from '@/components/widgets/WidgetFields'
+import MediaInput from '@/components/media/MediaInput'
 import { CATALOG, iconMap } from '@/components/widgets/catalog'
 
 const ADD_TYPES: BlockType[] = CATALOG.map((c) => c.type)
@@ -132,7 +133,7 @@ function BlockFields({ block: b, onUpdate }: { block: Block; onUpdate: (id: stri
           <input className="input" value={b.heading || ''} onChange={(e) => set({ heading: e.target.value })} placeholder="Hero heading" />
           <input className="input" value={b.subheading || ''} onChange={(e) => set({ subheading: e.target.value })} placeholder="Hero subheading" />
           <input className="input" value={b.label || ''} onChange={(e) => set({ label: e.target.value })} placeholder="Button label (optional)" />
-          {(b.variant === 'image' || b.variant === 'split') && <input className="input" value={b.url || ''} onChange={(e) => set({ url: e.target.value })} placeholder="Image URL" />}
+          {(b.variant === 'image' || b.variant === 'split') && <MediaInput value={b.url || ''} onChange={(v) => set({ url: v })} />}
         </div>
       )
     case 'heading':
@@ -142,7 +143,7 @@ function BlockFields({ block: b, onUpdate }: { block: Block; onUpdate: (id: stri
     case 'image':
       return (
         <div className="space-y-2">
-          <input className="input" value={b.url || ''} onChange={(e) => set({ url: e.target.value })} placeholder="Image URL" />
+          <MediaInput value={b.url || ''} onChange={(v) => set({ url: v })} />
           <input className="input" value={b.alt || ''} onChange={(e) => set({ alt: e.target.value })} placeholder="Alt text" />
         </div>
       )

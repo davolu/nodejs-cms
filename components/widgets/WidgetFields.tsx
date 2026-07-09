@@ -3,6 +3,7 @@
 import { Plus, X } from 'lucide-react'
 import type { Block } from '@/lib/blocks'
 import { widgetDef, Field } from '@/lib/widgets'
+import MediaInput from '@/components/media/MediaInput'
 
 // Generic settings editor driven by a widget's field schema. Works for every
 // registry widget, so new widgets need no bespoke editor code.
@@ -32,6 +33,7 @@ function FieldInput({ field: f, value, onChange }: { field: Field; value: any; o
     </select>
   )
   if (f.type === 'number') return <input type="number" className="input" value={value ?? 0} onChange={(e) => onChange(Number(e.target.value))} />
+  if (f.type === 'url') return <MediaInput value={value ?? ''} onChange={onChange} placeholder={f.placeholder} />
   if (f.type === 'items') return <ItemsEditor field={f} value={Array.isArray(value) ? value : []} onChange={onChange} />
   return <input className="input" value={value ?? ''} onChange={(e) => onChange(e.target.value)} placeholder={f.placeholder} />
 }

@@ -18,6 +18,7 @@ import { Block, BlockType, makeBlock, blockId, labelFor, variantsFor, themeVars 
 import { isWidget } from '@/lib/widgets'
 import WidgetRenderer from '@/components/widgets/WidgetRenderer'
 import WidgetFields from '@/components/widgets/WidgetFields'
+import MediaInput from '@/components/media/MediaInput'
 import { CATALOG, catalogByCategory, iconMap, CATALOG_COUNT } from '@/components/widgets/catalog'
 
 const ALL_TYPES: BlockType[] = CATALOG.map((c) => c.type)
@@ -466,11 +467,11 @@ function SettingsPanel({ block: b, onUpdate, onClose }: { block: Block; onUpdate
         </div>
       )}
       {(b.type === 'hero' && (b.variant === 'image' || b.variant === 'split')) && (
-        <Field label="Image URL"><input className="input" value={b.url || ''} onChange={(e) => set({ url: e.target.value })} placeholder="https://…" /></Field>
+        <Field label="Image URL"><MediaInput value={b.url || ''} onChange={(v) => set({ url: v })} /></Field>
       )}
       {b.type === 'image' && (
         <>
-          <Field label="Image URL"><input className="input" value={b.url || ''} onChange={(e) => set({ url: e.target.value })} placeholder="https://…" /></Field>
+          <Field label="Image URL"><MediaInput value={b.url || ''} onChange={(v) => set({ url: v })} /></Field>
           <Field label="Alt text"><input className="input" value={b.alt || ''} onChange={(e) => set({ alt: e.target.value })} /></Field>
         </>
       )}
