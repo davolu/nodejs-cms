@@ -2,6 +2,8 @@ import {
   siYoutube, siSpotify, siSoundcloud, siInstagram, siX, siTiktok,
   siGithub, siCaldotcom, siTypeform, siDiscord, siBuymeacoffee, siWhatsapp,
   siGmail, siGoogledrive, siGooglecalendar, siGooglesheets, siDropbox, siNotion, siAirtable, siHubspot,
+  siGoogledocs, siAsana, siZoom, siGitlab, siFigma, siReddit, siZoho, siTwitch, siIntercom, siCalendly,
+  siAlgolia, siCloudinary, siSupabase, siPosthog, siResend, siMailchimp, siStripe,
 } from 'simple-icons'
 
 interface Brand { path: string; hex: string; title: string }
@@ -39,6 +41,10 @@ export function appIconComponent(type: string) {
 const SLUG: Record<string, Brand> = {
   gmail: siGmail, googledrive: siGoogledrive, googlecalendar: siGooglecalendar, googlesheets: siGooglesheets,
   github: siGithub, dropbox: siDropbox, notion: siNotion, airtable: siAirtable, hubspot: siHubspot,
+  googledocs: siGoogledocs, asana: siAsana, zoom: siZoom, gitlab: siGitlab, figma: siFigma, spotify: siSpotify,
+  reddit: siReddit, zoho: siZoho, twitch: siTwitch, intercom: siIntercom, calendly: siCalendly,
+  algolia: siAlgolia, cloudinary: siCloudinary, supabase: siSupabase, posthog: siPosthog, resend: siResend,
+  mailchimp: siMailchimp, stripe: siStripe,
 }
 export function BrandLogo({ slug, className }: { slug: string; className?: string }) {
   const brand = SLUG[slug]

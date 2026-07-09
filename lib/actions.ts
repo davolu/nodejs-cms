@@ -197,6 +197,50 @@ export async function webhookPost(input: { url: string; payload?: any }) {
   return { ok: true, status: resp.status }
 }
 
+// SendGrid (API key): send a transactional email.
+export async function sendgridSend(input: { to: string; from: string; subject: string; text: string }) {
+  const key = process.env.SENDGRID_API_KEY
+  if (!key) throw new Error('SendGrid is not configured')
+  const resp = await fetch('https://api.sendgrid.com/v3/mail/send', {
+    method: 'POST',
+    headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json' },
+    body: JSON.stringify({ personalizations: [{ to: [{ email: input.to }] }], from: { email: input.from }, subject: input.subject, content: [{ type: 'text/plain', value: input.text }] }),
+  })
+  if (!resp.ok) throw new Error(`SendGrid send failed (${resp.status})`)
+  return { ok: true }
+}
+
+// Twilio (API key): send an SMS.
+export async function twilioSendSms(input: { to: string; body: string }) {
+  const sid = process.env.TWILIO_ACCOUNT_SID
+  const token = process.env.TWILIO_AUTH_TOKEN
+  const from = process.env.TWILIO_FROM
+  if (!sid || !token || !from) throw new Error('Twilio is not configured')
+  const form = new URLSearchParams({ To: input.to, From: from, Body: input.body })
+  const resp = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
+    method: 'POST',
+    headers: { authorization: 'Basic ' + Buffer.from(`${sid}:${token}`).toString('base64'), 'content-type': 'application/x-www-form-urlencoded' },
+    body: form.toString(),
+  })
+  const data = await resp.json()
+  if (!resp.ok) throw new Error(data?.message || `Twilio send failed (${resp.status})`)
+  return data
+}
+
+// OpenAI (API key): generate text.
+export async function openaiComplete(input: { prompt: string; model?: string }) {
+  const key = process.env.OPENAI_API_KEY
+  if (!key) throw new Error('OpenAI is not configured')
+  const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json' },
+    body: JSON.stringify({ model: input.model || 'gpt-4o-mini', messages: [{ role: 'user', content: input.prompt }] }),
+  })
+  const data = await resp.json()
+  if (!resp.ok) throw new Error(data?.error?.message || `OpenAI failed (${resp.status})`)
+  return { text: data.choices?.[0]?.message?.content || '' }
+}
+
 // ── Action registry (for the generic /api/actions/[id] runner) ──
 export interface ActionDef { id: string; connector: string; label: string; run: (input: any) => Promise<any>; sample?: any }
 export const ACTIONS: ActionDef[] = [
@@ -213,6 +257,9 @@ export const ACTIONS: ActionDef[] = [
   { id: 'notion.createPage', connector: 'notion', label: 'Create page', run: notionCreatePage, sample: { parentId: '', title: 'New page', content: 'Hello' } },
   { id: 'mailchimp.subscribe', connector: 'mailchimp', label: 'Add subscriber', run: mailchimpSubscribe, sample: { listId: '', email: 'fan@example.com', name: 'Ada' } },
   { id: 'stripe.createCustomer', connector: 'stripe', label: 'Create customer', run: stripeCreateCustomer, sample: { email: 'customer@example.com', name: 'Ada' } },
+  { id: 'sendgrid.send', connector: 'sendgrid', label: 'Send email', run: sendgridSend, sample: { to: 'you@example.com', from: 'hello@yoursite.com', subject: 'Hi', text: 'Test from ContentHub' } },
+  { id: 'twilio.sendSms', connector: 'twilio', label: 'Send SMS', run: twilioSendSms, sample: { to: '+15551234567', body: 'Hello from ContentHub' } },
+  { id: 'openai.complete', connector: 'openai', label: 'Generate text', run: openaiComplete, sample: { prompt: 'Write a one-line welcome message.' } },
   { id: 'webhook.post', connector: 'webhook', label: 'POST to a URL', run: webhookPost, sample: { url: 'https://example.com/hook', payload: { hello: 'world' } } },
 ]
 export const ACTION_MAP: Record<string, ActionDef> = Object.fromEntries(ACTIONS.map((a) => [a.id, a]))

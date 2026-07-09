@@ -83,11 +83,93 @@ export const CONNECTORS: Connector[] = [
     authorizeUrl: 'https://app.hubspot.com/oauth/authorize', tokenUrl: 'https://api.hubapi.com/oauth/v1/token',
     scopes: ['crm.objects.contacts.read', 'crm.objects.contacts.write'], setupUrl: 'https://developers.hubspot.com/' },
 
+  { id: 'google-docs', name: 'Google Docs', category: 'Productivity', brand: 'googledocs', description: 'Read and create Google Docs.',
+    scopes: [...OPENID, 'https://www.googleapis.com/auth/documents'], ...GOOGLE },
+
+  { id: 'linkedin', name: 'LinkedIn', category: 'Social', brand: 'linkedin', description: 'Share posts and read your profile.',
+    clientIdEnv: 'LINKEDIN_CLIENT_ID', clientSecretEnv: 'LINKEDIN_CLIENT_SECRET',
+    authorizeUrl: 'https://www.linkedin.com/oauth/v2/authorization', tokenUrl: 'https://www.linkedin.com/oauth/v2/accessToken',
+    scopes: ['openid', 'profile', 'email', 'w_member_social'], userInfoUrl: 'https://api.linkedin.com/v2/userinfo', accountEmailPath: 'email', accountNamePath: 'name',
+    setupUrl: 'https://www.linkedin.com/developers/apps' },
+
+  { id: 'asana', name: 'Asana', category: 'Productivity', brand: 'asana', description: 'Create and read tasks and projects.',
+    clientIdEnv: 'ASANA_CLIENT_ID', clientSecretEnv: 'ASANA_CLIENT_SECRET',
+    authorizeUrl: 'https://app.asana.com/-/oauth_authorize', tokenUrl: 'https://app.asana.com/-/oauth_token',
+    scopes: ['default'], setupUrl: 'https://app.asana.com/0/my-apps' },
+
+  { id: 'zoom', name: 'Zoom', category: 'Messaging', brand: 'zoom', description: 'Create meetings and read your account.',
+    clientIdEnv: 'ZOOM_CLIENT_ID', clientSecretEnv: 'ZOOM_CLIENT_SECRET',
+    authorizeUrl: 'https://zoom.us/oauth/authorize', tokenUrl: 'https://zoom.us/oauth/token', tokenAuth: 'basic',
+    scopes: [], setupUrl: 'https://marketplace.zoom.us/' },
+
+  { id: 'gitlab', name: 'GitLab', category: 'Developer', brand: 'gitlab', description: 'Access GitLab projects and issues.',
+    clientIdEnv: 'GITLAB_CLIENT_ID', clientSecretEnv: 'GITLAB_CLIENT_SECRET',
+    authorizeUrl: 'https://gitlab.com/oauth/authorize', tokenUrl: 'https://gitlab.com/oauth/token',
+    scopes: ['read_api'], pkce: true, userInfoUrl: 'https://gitlab.com/api/v4/user', accountEmailPath: 'email', accountNamePath: 'username',
+    setupUrl: 'https://gitlab.com/-/profile/applications' },
+
+  { id: 'figma', name: 'Figma', category: 'Developer', brand: 'figma', description: 'Read your Figma files and projects.',
+    clientIdEnv: 'FIGMA_CLIENT_ID', clientSecretEnv: 'FIGMA_CLIENT_SECRET',
+    authorizeUrl: 'https://www.figma.com/oauth', tokenUrl: 'https://api.figma.com/v1/oauth/token',
+    scopes: ['file_read'], setupUrl: 'https://www.figma.com/developers/apps' },
+
+  { id: 'spotify', name: 'Spotify', category: 'Media', brand: 'spotify', description: 'Read playlists and your library.',
+    clientIdEnv: 'SPOTIFY_CLIENT_ID', clientSecretEnv: 'SPOTIFY_CLIENT_SECRET',
+    authorizeUrl: 'https://accounts.spotify.com/authorize', tokenUrl: 'https://accounts.spotify.com/api/token', tokenAuth: 'basic',
+    scopes: ['user-read-email', 'playlist-read-private'], userInfoUrl: 'https://api.spotify.com/v1/me', accountEmailPath: 'email', accountNamePath: 'display_name',
+    setupUrl: 'https://developer.spotify.com/dashboard' },
+
+  { id: 'reddit', name: 'Reddit', category: 'Social', brand: 'reddit', description: 'Read your identity and subreddits.',
+    clientIdEnv: 'REDDIT_CLIENT_ID', clientSecretEnv: 'REDDIT_CLIENT_SECRET',
+    authorizeUrl: 'https://www.reddit.com/api/v1/authorize', tokenUrl: 'https://www.reddit.com/api/v1/access_token', tokenAuth: 'basic',
+    scopes: ['identity', 'read'], extraAuthParams: { duration: 'permanent' }, setupUrl: 'https://www.reddit.com/prefs/apps' },
+
+  { id: 'twitch', name: 'Twitch', category: 'Media', brand: 'twitch', description: 'Read your Twitch channel and streams.',
+    clientIdEnv: 'TWITCH_CLIENT_ID', clientSecretEnv: 'TWITCH_CLIENT_SECRET',
+    authorizeUrl: 'https://id.twitch.tv/oauth2/authorize', tokenUrl: 'https://id.twitch.tv/oauth2/token',
+    scopes: ['user:read:email'], setupUrl: 'https://dev.twitch.tv/console' },
+
+  { id: 'salesforce', name: 'Salesforce', category: 'CRM', brand: 'salesforce', description: 'Sync leads and contacts with Salesforce.',
+    clientIdEnv: 'SALESFORCE_CLIENT_ID', clientSecretEnv: 'SALESFORCE_CLIENT_SECRET',
+    authorizeUrl: 'https://login.salesforce.com/services/oauth2/authorize', tokenUrl: 'https://login.salesforce.com/services/oauth2/token',
+    scopes: ['api', 'refresh_token'], setupUrl: 'https://developer.salesforce.com/' },
+
+  { id: 'zoho', name: 'Zoho CRM', category: 'CRM', brand: 'zoho', description: 'Sync records with Zoho CRM.',
+    clientIdEnv: 'ZOHO_CLIENT_ID', clientSecretEnv: 'ZOHO_CLIENT_SECRET',
+    authorizeUrl: 'https://accounts.zoho.com/oauth/v2/auth', tokenUrl: 'https://accounts.zoho.com/oauth/v2/token',
+    scopes: ['ZohoCRM.modules.ALL'], extraAuthParams: { access_type: 'offline', prompt: 'consent' }, setupUrl: 'https://api-console.zoho.com/' },
+
+  { id: 'intercom', name: 'Intercom', category: 'Support', brand: 'intercom', description: 'Read and create Intercom contacts.',
+    clientIdEnv: 'INTERCOM_CLIENT_ID', clientSecretEnv: 'INTERCOM_CLIENT_SECRET',
+    authorizeUrl: 'https://app.intercom.com/oauth', tokenUrl: 'https://api.intercom.io/auth/eagle/token',
+    scopes: [], setupUrl: 'https://developers.intercom.com/' },
+
+  { id: 'calendly', name: 'Calendly', category: 'Scheduling', brand: 'calendly', description: 'Read scheduled events and invitees.',
+    clientIdEnv: 'CALENDLY_CLIENT_ID', clientSecretEnv: 'CALENDLY_CLIENT_SECRET',
+    authorizeUrl: 'https://auth.calendly.com/oauth/authorize', tokenUrl: 'https://auth.calendly.com/oauth/token',
+    scopes: [], setupUrl: 'https://calendly.com/integrations/api_webhooks' },
+
   // ── API-key connectors (configured via env vars, no OAuth dance) ──
   { id: 'mailchimp', name: 'Mailchimp', category: 'Email', brand: 'mailchimp', description: 'Add subscribers to a Mailchimp audience.',
     auth: 'apikey', apiKeyEnv: ['MAILCHIMP_API_KEY'], scopes: [], setupUrl: 'https://admin.mailchimp.com/account/api/' },
   { id: 'stripe', name: 'Stripe', category: 'Payments', brand: 'stripe', description: 'Create customers and payment links.',
     auth: 'apikey', apiKeyEnv: ['STRIPE_SECRET_KEY'], scopes: [], setupUrl: 'https://dashboard.stripe.com/apikeys' },
+  { id: 'sendgrid', name: 'SendGrid', category: 'Email', brand: 'sendgrid', description: 'Send transactional email via SendGrid.',
+    auth: 'apikey', apiKeyEnv: ['SENDGRID_API_KEY'], scopes: [], setupUrl: 'https://app.sendgrid.com/settings/api_keys' },
+  { id: 'resend', name: 'Resend', category: 'Email', brand: 'resend', description: 'Send email via Resend.',
+    auth: 'apikey', apiKeyEnv: ['RESEND_API_KEY'], scopes: [], setupUrl: 'https://resend.com/api-keys' },
+  { id: 'twilio', name: 'Twilio', category: 'Messaging', brand: 'twilio', description: 'Send SMS via Twilio.',
+    auth: 'apikey', apiKeyEnv: ['TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'TWILIO_FROM'], scopes: [], setupUrl: 'https://console.twilio.com/' },
+  { id: 'openai', name: 'OpenAI', category: 'AI', brand: 'openai', description: 'Generate text with OpenAI models.',
+    auth: 'apikey', apiKeyEnv: ['OPENAI_API_KEY'], scopes: [], setupUrl: 'https://platform.openai.com/api-keys' },
+  { id: 'algolia', name: 'Algolia', category: 'Search', brand: 'algolia', description: 'Index and search records with Algolia.',
+    auth: 'apikey', apiKeyEnv: ['ALGOLIA_APP_ID', 'ALGOLIA_ADMIN_API_KEY'], scopes: [], setupUrl: 'https://dashboard.algolia.com/account/api-keys/' },
+  { id: 'supabase', name: 'Supabase', category: 'Database', brand: 'supabase', description: 'Read and write Supabase tables.',
+    auth: 'apikey', apiKeyEnv: ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'], scopes: [], setupUrl: 'https://supabase.com/dashboard' },
+  { id: 'posthog', name: 'PostHog', category: 'Analytics', brand: 'posthog', description: 'Capture product analytics events.',
+    auth: 'apikey', apiKeyEnv: ['POSTHOG_API_KEY'], scopes: [], setupUrl: 'https://posthog.com/' },
+  { id: 'cloudinary', name: 'Cloudinary', category: 'Storage', brand: 'cloudinary', description: 'Store and transform images and video.',
+    auth: 'apikey', apiKeyEnv: ['CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET'], scopes: [], setupUrl: 'https://console.cloudinary.com/' },
 ]
 
 export const CONNECTOR_MAP: Record<string, Connector> = Object.fromEntries(CONNECTORS.map((c) => [c.id, c]))
