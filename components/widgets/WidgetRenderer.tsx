@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import {
-  ArrowRight, Check, Info, CircleCheck, TriangleAlert, CircleAlert, Sparkle, ChevronDown,
+  ArrowRight, Check, Info, CircleCheck, TriangleAlert, CircleAlert, Sparkle, ChevronDown, ChevronLeft, ChevronRight,
   Twitter, Facebook, Instagram, Linkedin, Youtube, Github,
 } from 'lucide-react'
 import type { Block } from '@/lib/blocks'
@@ -243,6 +243,46 @@ export default function WidgetRenderer({ block }: { block: Block }) {
       )
     case 'faq':
       return <Faq heading={p.heading} items={p.items || []} />
+    case 'tabs':
+      return <Tabs items={p.items || []} />
+    case 'carousel':
+      return <Carousel images={p.images || []} />
+    case 'countdown':
+      return <Countdown title={p.title} date={p.date} />
+    case 'beforeafter':
+      return <BeforeAfter before={p.before} after={p.after} />
+    case 'embed': {
+      if (!p.url) return <div className="mx-auto max-w-3xl px-6 py-6 text-center text-sm text-slate-400">Add an embed URL in settings.</div>
+      return (
+        <Reveal className="mx-auto max-w-4xl px-6 py-8">
+          <div className={`${ratioClass(p.ratio)} overflow-hidden rounded-2xl bg-slate-100 shadow-sm ring-1 ring-slate-900/5`}>
+            <iframe src={p.url} className="h-full w-full" loading="lazy" allowFullScreen />
+          </div>
+        </Reveal>
+      )
+    }
+    case 'maps': {
+      const src = `https://www.google.com/maps?q=${encodeURIComponent(p.query || '')}&output=embed`
+      return (
+        <Reveal className="mx-auto max-w-4xl px-6 py-8">
+          <div className={`${ratioClass(p.ratio)} overflow-hidden rounded-2xl shadow-sm ring-1 ring-slate-900/5`}>
+            <iframe src={src} className="h-full w-full" loading="lazy" />
+          </div>
+        </Reveal>
+      )
+    }
+    case 'calendly':
+      return (
+        <Reveal className="mx-auto max-w-4xl px-6 py-8">
+          <iframe src={p.url} className="h-[680px] w-full rounded-2xl ring-1 ring-slate-900/5" loading="lazy" />
+        </Reveal>
+      )
+    case 'html':
+      return (
+        <div className="mx-auto max-w-4xl px-6 py-6">
+          <div dangerouslySetInnerHTML={{ __html: p.code || '' }} />
+        </div>
+      )
     case 'social': {
       const icons: any = { twitter: Twitter, facebook: Facebook, instagram: Instagram, linkedin: Linkedin, youtube: Youtube, github: Github }
       return (
@@ -257,6 +297,111 @@ export default function WidgetRenderer({ block }: { block: Block }) {
     default:
       return <div className="mx-auto max-w-3xl px-6 py-6 text-center text-sm text-slate-400">Unknown widget: {block.type}</div>
   }
+}
+
+function ratioClass(r?: string): string {
+  return { '16:9': 'aspect-video', '4:3': 'aspect-[4/3]', '1:1': 'aspect-square', '21:9': 'aspect-[21/9]' }[r || '16:9'] || 'aspect-video'
+}
+
+function Tabs({ items }: { items: { label: string; content: string }[] }) {
+  const [active, setActive] = useState(0)
+  if (!items.length) return null
+  return (
+    <div className="mx-auto max-w-3xl px-6 py-10">
+      <div className="flex flex-wrap gap-1 border-b border-slate-200">
+        {items.map((t, i) => (
+          <button
+            key={i}
+            onClick={() => setActive(i)}
+            className={`-mb-px border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${active === i ? 'text-slate-900' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
+            style={active === i ? { borderColor: 'var(--solid)', color: 'var(--solid)' } : undefined}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+      <div className="pt-5 leading-8 text-slate-600">{items[active]?.content}</div>
+    </div>
+  )
+}
+
+function Carousel({ images }: { images: { url: string }[] }) {
+  const [i, setI] = useState(0)
+  const n = images.length
+  useEffect(() => {
+    if (n <= 1) return
+    const t = setInterval(() => setI((v) => (v + 1) % n), 5000)
+    return () => clearInterval(t)
+  }, [n])
+  if (!n) return null
+  const go = (d: number) => setI((v) => (v + d + n) % n)
+  return (
+    <Reveal className="mx-auto max-w-5xl px-6 py-10">
+      <div className="group relative overflow-hidden rounded-3xl shadow-xl ring-1 ring-slate-900/5">
+        <div className="flex transition-transform duration-700 ease-out" style={{ transform: `translateX(-${i * 100}%)` }}>
+          {images.map((im, k) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={k} src={im.url} alt="" className="aspect-[16/9] w-full shrink-0 object-cover" />
+          ))}
+        </div>
+        {n > 1 && (
+          <>
+            <button onClick={() => go(-1)} className="absolute left-3 top-1/2 -translate-y-1/2 grid h-9 w-9 place-items-center rounded-full bg-white/80 text-slate-700 opacity-0 transition group-hover:opacity-100 hover:bg-white" aria-label="Previous"><ChevronLeft className="h-5 w-5" /></button>
+            <button onClick={() => go(1)} className="absolute right-3 top-1/2 -translate-y-1/2 grid h-9 w-9 place-items-center rounded-full bg-white/80 text-slate-700 opacity-0 transition group-hover:opacity-100 hover:bg-white" aria-label="Next"><ChevronRight className="h-5 w-5" /></button>
+            <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5">
+              {images.map((_, k) => <button key={k} onClick={() => setI(k)} className={`h-2 rounded-full transition-all ${k === i ? 'w-6 bg-white' : 'w-2 bg-white/60'}`} aria-label={`Slide ${k + 1}`} />)}
+            </div>
+          </>
+        )}
+      </div>
+    </Reveal>
+  )
+}
+
+function Countdown({ title, date }: { title?: string; date?: string }) {
+  const target = date ? new Date(date.replace(' ', 'T')).getTime() : 0
+  const [now, setNow] = useState<number>(() => Date.now())
+  useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t) }, [])
+  const diff = Math.max(0, target - now)
+  const d = Math.floor(diff / 86400000)
+  const h = Math.floor((diff % 86400000) / 3600000)
+  const m = Math.floor((diff % 3600000) / 60000)
+  const s = Math.floor((diff % 60000) / 1000)
+  const cell = (v: number, label: string) => (
+    <div className="min-w-[72px] rounded-2xl px-4 py-3 text-center text-white" style={grad}>
+      <div className="site-heading text-3xl font-bold tabular-nums sm:text-4xl">{String(v).padStart(2, '0')}</div>
+      <div className="text-[11px] uppercase tracking-wider opacity-80">{label}</div>
+    </div>
+  )
+  return (
+    <Reveal className="mx-auto max-w-3xl px-6 py-12 text-center">
+      {title && <h2 className="site-heading mb-6 text-2xl font-bold text-slate-900 sm:text-3xl">{title}</h2>}
+      <div className="flex justify-center gap-3">{cell(d, 'Days')}{cell(h, 'Hours')}{cell(m, 'Mins')}{cell(s, 'Secs')}</div>
+    </Reveal>
+  )
+}
+
+function BeforeAfter({ before, after }: { before?: string; after?: string }) {
+  const [pos, setPos] = useState(50)
+  return (
+    <Reveal className="mx-auto max-w-4xl px-6 py-10">
+      <div className="relative select-none overflow-hidden rounded-3xl shadow-xl ring-1 ring-slate-900/5">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={after} alt="" className="block aspect-[16/9] w-full object-cover" />
+        <div className="absolute inset-0 overflow-hidden" style={{ width: `${pos}%` }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={before} alt="" className="aspect-[16/9] h-full w-full max-w-none object-cover" style={{ width: `${10000 / pos}%` }} />
+        </div>
+        <div className="absolute inset-y-0" style={{ left: `${pos}%` }}>
+          <div className="absolute inset-y-0 -ml-px w-0.5 bg-white" />
+          <div className="absolute top-1/2 -ml-4 -translate-y-1/2 grid h-8 w-8 place-items-center rounded-full bg-white text-slate-600 shadow">
+            <ChevronLeft className="h-3 w-3" /><ChevronRight className="h-3 w-3" />
+          </div>
+        </div>
+        <input type="range" min={0} max={100} value={pos} onChange={(e) => setPos(Number(e.target.value))} className="absolute inset-0 h-full w-full cursor-ew-resize opacity-0" aria-label="Compare" />
+      </div>
+    </Reveal>
+  )
 }
 
 function Faq({ heading, items }: { heading?: string; items: { q: string; a: string }[] }) {
