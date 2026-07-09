@@ -6,7 +6,7 @@ import { uploadFile, storageProvider } from '@/lib/storage'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 30
 
-const MAX_BYTES = 10 * 1024 * 1024        // 10MB for real storage
+const MAX_BYTES = 4 * 1024 * 1024         // Vercel serverless request body cap (~4.5MB)
 const MAX_INLINE_BYTES = 2 * 1024 * 1024  // 2MB when falling back to data URLs
 
 export async function POST(req: NextRequest) {
