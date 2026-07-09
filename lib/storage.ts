@@ -1,11 +1,24 @@
 import crypto from 'crypto'
 import { promises as fs } from 'fs'
 import path from 'path'
+import { put } from '@vercel/blob'
 
 export interface UploadResult { url: string; provider: string }
 
 function sanitize(name: string): string {
   return (name || 'file').replace(/[^a-zA-Z0-9._-]/g, '-').slice(-80) || 'file'
+}
+
+// Vercel Blob — preferred on Vercel (token auto-injected as BLOB_READ_WRITE_TOKEN).
+async function uploadBlob(buffer: Buffer, filename: string, contentType: string): Promise<string> {
+  const folder = process.env.BLOB_FOLDER || 'contenthub'
+  const res = await put(`${folder}/${filename}`, buffer, {
+    access: 'public',
+    contentType,
+    addRandomSuffix: true,
+    token: process.env.BLOB_READ_WRITE_TOKEN,
+  })
+  return res.url
 }
 
 // Signed Cloudinary upload via REST (no SDK dependency).
@@ -40,12 +53,14 @@ async function uploadDisk(buffer: Buffer, filename: string): Promise<string> {
   return `${base}/${name}`
 }
 
+const hasBlob = () => !!process.env.BLOB_READ_WRITE_TOKEN
 const hasCloudinary = () =>
   !!(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET)
 
-// Picks the best available backend automatically.
+// Picks the best available backend automatically. Order: Vercel Blob → Cloudinary → disk → inline.
 export async function uploadFile(buffer: Buffer, filename: string, contentType: string): Promise<UploadResult> {
   const safe = sanitize(filename)
+  if (hasBlob()) return { url: await uploadBlob(buffer, safe, contentType), provider: 'blob' }
   if (hasCloudinary()) return { url: await uploadCloudinary(buffer, contentType), provider: 'cloudinary' }
 
   // Local disk works on a self-hosted server (not on Vercel's read-only fs).
@@ -58,6 +73,7 @@ export async function uploadFile(buffer: Buffer, filename: string, contentType: 
 }
 
 export function storageProvider(): string {
+  if (hasBlob()) return 'blob'
   if (hasCloudinary()) return 'cloudinary'
   if (process.env.UPLOAD_DIR || !process.env.VERCEL) return 'disk'
   return 'inline'
