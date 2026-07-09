@@ -6,6 +6,13 @@ One deployable app — React front end, Node back end, one Vercel deploy. Works 
 
 **Live demo:** https://nodejs-cms.vercel.app · **Admin:** `admin@acme.com` / `admin123`
 
+
+<p align="center">
+  <a href="https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fdavolu%2Fnodejs-cms&env=DATABASE_URL,AUTH_SECRET"><img src="https://vercel.com/button" alt="Deploy with Vercel"/></a>
+  &nbsp;<a href="https://nodejs-cms.vercel.app"><strong>Live demo</strong></a>
+  &nbsp;·&nbsp;<a href="./landing/index.html"><strong>Landing page</strong></a>
+</p>
+
 ---
 
 ## Highlights
