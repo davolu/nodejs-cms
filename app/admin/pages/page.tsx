@@ -26,7 +26,7 @@ export default function PagesListPage() {
 
   return (
     <div>
-      <PageHeader title="Pages" subtitle="Static pages on your website." action={{ label: 'New page', href: '/pages/new' }} />
+      <PageHeader title="Pages" subtitle="Static pages on your website." action={{ label: 'New page', href: '/admin/pages/new' }} />
 
       {loading ? (
         <div className="card p-10 text-center text-sm text-slate-400">Loading pages…</div>
@@ -34,7 +34,7 @@ export default function PagesListPage() {
         <EmptyState
           title="No pages yet"
           hint="Create your first page to start building out the site."
-          action={<Link href="/pages/new" className="btn-primary"><Plus className="h-4 w-4" /> New page</Link>}
+          action={<Link href="/admin/pages/new" className="btn-primary"><Plus className="h-4 w-4" /> New page</Link>}
         />
       ) : (
         <div className="card overflow-hidden">
@@ -52,7 +52,7 @@ export default function PagesListPage() {
               {pages.map((p) => (
                 <tr key={p.id} className="hover:bg-slate-50">
                   <td className="px-5 py-3">
-                    <Link href={`/pages/${p.id}/edit`} className="font-medium text-slate-800 hover:text-brand-700">
+                    <Link href={`/admin/pages/${p.id}/edit`} className="font-medium text-slate-800 hover:text-brand-700">
                       {p.title}
                     </Link>
                   </td>

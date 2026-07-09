@@ -9,10 +9,10 @@ export default async function DashboardPage() {
   const stats = await getStats()
 
   const cards = [
-    { label: 'Pages', value: stats.pages, icon: FileText, href: '/pages' },
-    { label: 'Posts', value: stats.posts, icon: Newspaper, href: '/posts' },
-    { label: 'Media', value: stats.media, icon: ImageIcon, href: '/media' },
-    { label: 'Drafts', value: stats.drafts, icon: PenLine, href: '/pages' },
+    { label: 'Pages', value: stats.pages, icon: FileText, href: '/admin/pages' },
+    { label: 'Posts', value: stats.posts, icon: Newspaper, href: '/admin/posts' },
+    { label: 'Media', value: stats.media, icon: ImageIcon, href: '/admin/media' },
+    { label: 'Drafts', value: stats.drafts, icon: PenLine, href: '/admin/pages' },
   ]
 
   return (
@@ -23,8 +23,8 @@ export default async function DashboardPage() {
           <p className="mt-1 text-sm text-slate-500">Overview of your content.</p>
         </div>
         <div className="flex gap-2">
-          <Link href="/pages/new" className="btn-outline"><Plus className="h-4 w-4" /> New page</Link>
-          <Link href="/posts/new" className="btn-primary"><Plus className="h-4 w-4" /> New post</Link>
+          <Link href="/admin/pages/new" className="btn-outline"><Plus className="h-4 w-4" /> New page</Link>
+          <Link href="/admin/posts/new" className="btn-primary"><Plus className="h-4 w-4" /> New post</Link>
         </div>
       </div>
 

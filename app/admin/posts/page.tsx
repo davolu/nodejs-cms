@@ -26,7 +26,7 @@ export default function PostsListPage() {
 
   return (
     <div>
-      <PageHeader title="Posts" subtitle="Blog posts and articles." action={{ label: 'New post', href: '/posts/new' }} />
+      <PageHeader title="Posts" subtitle="Blog posts and articles." action={{ label: 'New post', href: '/admin/posts/new' }} />
 
       {loading ? (
         <div className="card p-10 text-center text-sm text-slate-400">Loading posts…</div>
@@ -34,13 +34,13 @@ export default function PostsListPage() {
         <EmptyState
           title="No posts yet"
           hint="Write your first blog post to get started."
-          action={<Link href="/posts/new" className="btn-primary"><Plus className="h-4 w-4" /> New post</Link>}
+          action={<Link href="/admin/posts/new" className="btn-primary"><Plus className="h-4 w-4" /> New post</Link>}
         />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {posts.map((p) => (
             <div key={p.id} className="card overflow-hidden">
-              <Link href={`/posts/${p.id}/edit`} className="block">
+              <Link href={`/admin/posts/${p.id}/edit`} className="block">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={p.featuredImage} alt={p.title} className="h-36 w-full object-cover" />
               </Link>
@@ -49,7 +49,7 @@ export default function PostsListPage() {
                   <StatusBadge status={p.status} />
                   <span className="text-xs text-slate-400">{fmtDate(p.updatedAt)}</span>
                 </div>
-                <Link href={`/posts/${p.id}/edit`} className="block font-medium text-slate-800 hover:text-brand-700">
+                <Link href={`/admin/posts/${p.id}/edit`} className="block font-medium text-slate-800 hover:text-brand-700">
                   {p.title}
                 </Link>
                 <p className="mt-1 line-clamp-2 text-sm text-slate-500">{p.excerpt}</p>

@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS pages (
   id           TEXT PRIMARY KEY,
   title        TEXT NOT NULL,
   slug         TEXT NOT NULL UNIQUE,
-  body         TEXT NOT NULL DEFAULT '',
+  blocks       JSONB NOT NULL DEFAULT '[]'::jsonb,  -- ordered content blocks (page builder)
   template     TEXT NOT NULL DEFAULT 'default',
   meta_title   TEXT NOT NULL DEFAULT '',
   meta_desc    TEXT NOT NULL DEFAULT '',
@@ -13,6 +13,9 @@ CREATE TABLE IF NOT EXISTS pages (
   updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
   created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Upgrade older installs that had a text `body` column.
+ALTER TABLE pages ADD COLUMN IF NOT EXISTS blocks JSONB NOT NULL DEFAULT '[]'::jsonb;
 
 CREATE TABLE IF NOT EXISTS posts (
   id             TEXT PRIMARY KEY,

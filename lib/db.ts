@@ -38,9 +38,9 @@ async function initOnce(): Promise<void> {
   if (rows[0].c === 0) {
     for (const p of seedPages) {
       await pool.query(
-        `INSERT INTO pages (id,title,slug,body,template,meta_title,meta_desc,status,updated_at,created_at)
+        `INSERT INTO pages (id,title,slug,blocks,template,meta_title,meta_desc,status,updated_at,created_at)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) ON CONFLICT (id) DO NOTHING`,
-        [p.id, p.title, p.slug, p.body, p.template, p.metaTitle, p.metaDescription, p.status, p.updatedAt, p.createdAt]
+        [p.id, p.title, p.slug, JSON.stringify(p.blocks), p.template, p.metaTitle, p.metaDescription, p.status, p.updatedAt, p.createdAt]
       )
     }
     for (const p of seedPosts) {

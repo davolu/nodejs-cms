@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Save, ArrowLeft, ImagePlus } from 'lucide-react'
+import { Save, ArrowLeft, ImagePlus, Eye } from 'lucide-react'
 import Link from 'next/link'
 import type { Post } from '@/lib/seed'
 
@@ -34,28 +34,41 @@ export default function PostForm({ initial }: Props) {
     if (!slugTouched) set('slug', slugify(v))
   }
 
-  async function save(status?: 'draft' | 'published') {
-    setSaving(true)
+  async function persist(status?: 'draft' | 'published'): Promise<Post | null> {
     const payload = { ...form, status: status ?? form.status }
     const res = await fetch(editing ? `/api/posts/${initial!.id}` : '/api/posts', {
       method: editing ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     })
+    return res.ok ? ((await res.json()) as Post) : null
+  }
+
+  async function save(status?: 'draft' | 'published') {
+    setSaving(true)
+    const saved = await persist(status)
     setSaving(false)
-    if (res.ok) router.push('/posts')
+    if (saved) router.push('/admin/posts')
+  }
+
+  async function preview() {
+    setSaving(true)
+    const saved = await persist()
+    setSaving(false)
+    if (saved) window.open(`/blog/${saved.slug}?preview=1`, '_blank')
   }
 
   return (
     <div>
       <div className="mb-6 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <Link href="/posts" className="btn-ghost !px-2"><ArrowLeft className="h-4 w-4" /></Link>
+          <Link href="/admin/posts" className="btn-ghost !px-2"><ArrowLeft className="h-4 w-4" /></Link>
           <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
             {editing ? 'Edit post' : 'New post'}
           </h1>
         </div>
         <div className="flex gap-2">
+          <button onClick={preview} disabled={saving} className="btn-outline"><Eye className="h-4 w-4" /> Preview</button>
           <button onClick={() => save('draft')} disabled={saving} className="btn-outline">Save draft</button>
           <button onClick={() => save('published')} disabled={saving} className="btn-primary">
             <Save className="h-4 w-4" /> {saving ? 'Saving…' : 'Save & publish'}

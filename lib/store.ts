@@ -22,7 +22,9 @@ export function slugify(input: string): string {
 
 // ── Row mappers (snake_case → camelCase) ──
 const toPage = (r: any): Page => ({
-  id: r.id, title: r.title, slug: r.slug, body: r.body, template: r.template,
+  id: r.id, title: r.title, slug: r.slug,
+  blocks: Array.isArray(r.blocks) ? r.blocks : (typeof r.blocks === 'string' ? JSON.parse(r.blocks || '[]') : []),
+  template: r.template,
   metaTitle: r.meta_title, metaDescription: r.meta_desc, status: r.status,
   updatedAt: new Date(r.updated_at).toISOString(), createdAt: new Date(r.created_at).toISOString(),
 })
@@ -52,12 +54,19 @@ export const pagesRepo = {
     }
     return mem.pages.find((p) => p.id === id) ?? null
   },
+  async getBySlug(slug: string): Promise<Page | null> {
+    if (hasDb()) {
+      const rows = await query('SELECT * FROM pages WHERE slug=$1', [slug])
+      return rows[0] ? toPage(rows[0]) : null
+    }
+    return mem.pages.find((p) => p.slug === slug) ?? null
+  },
   async create(input: Partial<Page>): Promise<Page> {
     const page: Page = {
       id: newId('pg'),
       title: input.title || 'Untitled page',
       slug: input.slug || slugify(input.title || 'untitled-page'),
-      body: input.body || '',
+      blocks: Array.isArray(input.blocks) ? input.blocks : [],
       template: input.template || 'default',
       metaTitle: input.metaTitle || '',
       metaDescription: input.metaDescription || '',
@@ -67,9 +76,9 @@ export const pagesRepo = {
     }
     if (hasDb()) {
       await query(
-        `INSERT INTO pages (id,title,slug,body,template,meta_title,meta_desc,status,updated_at,created_at)
+        `INSERT INTO pages (id,title,slug,blocks,template,meta_title,meta_desc,status,updated_at,created_at)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-        [page.id, page.title, page.slug, page.body, page.template, page.metaTitle, page.metaDescription, page.status, page.updatedAt, page.createdAt]
+        [page.id, page.title, page.slug, JSON.stringify(page.blocks), page.template, page.metaTitle, page.metaDescription, page.status, page.updatedAt, page.createdAt]
       )
     } else {
       mem.pages.unshift(page)
@@ -82,8 +91,8 @@ export const pagesRepo = {
     const merged: Page = { ...existing, ...input, id, updatedAt: now() }
     if (hasDb()) {
       await query(
-        `UPDATE pages SET title=$2,slug=$3,body=$4,template=$5,meta_title=$6,meta_desc=$7,status=$8,updated_at=$9 WHERE id=$1`,
-        [id, merged.title, merged.slug, merged.body, merged.template, merged.metaTitle, merged.metaDescription, merged.status, merged.updatedAt]
+        `UPDATE pages SET title=$2,slug=$3,blocks=$4,template=$5,meta_title=$6,meta_desc=$7,status=$8,updated_at=$9 WHERE id=$1`,
+        [id, merged.title, merged.slug, JSON.stringify(merged.blocks), merged.template, merged.metaTitle, merged.metaDescription, merged.status, merged.updatedAt]
       )
     } else {
       const i = mem.pages.findIndex((p) => p.id === id)
@@ -115,6 +124,13 @@ export const postsRepo = {
       return rows[0] ? toPost(rows[0]) : null
     }
     return mem.posts.find((p) => p.id === id) ?? null
+  },
+  async getBySlug(slug: string): Promise<Post | null> {
+    if (hasDb()) {
+      const rows = await query('SELECT * FROM posts WHERE slug=$1', [slug])
+      return rows[0] ? toPost(rows[0]) : null
+    }
+    return mem.posts.find((p) => p.slug === slug) ?? null
   },
   async create(input: Partial<Post>): Promise<Post> {
     const post: Post = {
@@ -240,8 +256,8 @@ export async function getStats() {
     media: media.length,
     drafts: pages.filter((p) => p.status === 'draft').length + posts.filter((p) => p.status === 'draft').length,
     published: pages.filter((p) => p.status === 'published').length + posts.filter((p) => p.status === 'published').length,
-    recent: [...pages.map((p) => ({ type: 'Page', title: p.title, status: p.status, updatedAt: p.updatedAt, href: `/pages/${p.id}/edit` })),
-             ...posts.map((p) => ({ type: 'Post', title: p.title, status: p.status, updatedAt: p.updatedAt, href: `/posts/${p.id}/edit` }))]
+    recent: [...pages.map((p) => ({ type: 'Page', title: p.title, status: p.status, updatedAt: p.updatedAt, href: `/admin/pages/${p.id}/edit` })),
+             ...posts.map((p) => ({ type: 'Post', title: p.title, status: p.status, updatedAt: p.updatedAt, href: `/admin/posts/${p.id}/edit` }))]
       .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 6),
     usingDatabase: hasDb(),
   }

@@ -2,9 +2,11 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Save, ArrowLeft } from 'lucide-react'
+import { Save, ArrowLeft, Eye } from 'lucide-react'
 import Link from 'next/link'
 import type { Page } from '@/lib/seed'
+import type { Block } from '@/lib/blocks'
+import BlockEditor from '@/components/BlockEditor'
 
 const slugify = (s: string) =>
   s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
@@ -16,10 +18,10 @@ export default function PageForm({ initial }: Props) {
   const editing = !!initial
   const [saving, setSaving] = useState(false)
   const [slugTouched, setSlugTouched] = useState(editing)
+  const [blocks, setBlocks] = useState<Block[]>(initial?.blocks ?? [])
   const [form, setForm] = useState({
     title: initial?.title ?? '',
     slug: initial?.slug ?? '',
-    body: initial?.body ?? '',
     template: initial?.template ?? 'default',
     metaTitle: initial?.metaTitle ?? '',
     metaDescription: initial?.metaDescription ?? '',
@@ -33,28 +35,42 @@ export default function PageForm({ initial }: Props) {
     if (!slugTouched) set('slug', slugify(v))
   }
 
-  async function save(status?: 'draft' | 'published') {
-    setSaving(true)
-    const payload = { ...form, status: status ?? form.status }
+  // Persists the page and returns the saved record (used by both Save and Preview).
+  async function persist(status?: 'draft' | 'published'): Promise<Page | null> {
+    const payload = { ...form, blocks, status: status ?? form.status }
     const res = await fetch(editing ? `/api/pages/${initial!.id}` : '/api/pages', {
       method: editing ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     })
+    return res.ok ? ((await res.json()) as Page) : null
+  }
+
+  async function save(status?: 'draft' | 'published') {
+    setSaving(true)
+    const saved = await persist(status)
     setSaving(false)
-    if (res.ok) router.push('/pages')
+    if (saved) router.push('/admin/pages')
+  }
+
+  async function preview() {
+    setSaving(true)
+    const saved = await persist() // save current state first so preview is accurate
+    setSaving(false)
+    if (saved) window.open(`/${saved.slug}?preview=1`, '_blank')
   }
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between gap-4">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <Link href="/pages" className="btn-ghost !px-2"><ArrowLeft className="h-4 w-4" /></Link>
+          <Link href="/admin/pages" className="btn-ghost !px-2"><ArrowLeft className="h-4 w-4" /></Link>
           <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
             {editing ? 'Edit page' : 'New page'}
           </h1>
         </div>
         <div className="flex gap-2">
+          <button onClick={preview} disabled={saving} className="btn-outline"><Eye className="h-4 w-4" /> Preview</button>
           <button onClick={() => save('draft')} disabled={saving} className="btn-outline">Save draft</button>
           <button onClick={() => save('published')} disabled={saving} className="btn-primary">
             <Save className="h-4 w-4" /> {saving ? 'Saving…' : 'Save & publish'}
@@ -63,19 +79,19 @@ export default function PageForm({ initial }: Props) {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Main content */}
+        {/* Builder */}
         <div className="space-y-4 lg:col-span-2">
           <div className="card p-5">
             <label className="label">Title</label>
             <input className="input" value={form.title} onChange={(e) => onTitle(e.target.value)} placeholder="e.g. About Us" />
+          </div>
 
-            <label className="label mt-4">Content</label>
-            <textarea
-              className="input min-h-[240px] font-mono text-[13px] leading-relaxed"
-              value={form.body}
-              onChange={(e) => set('body', e.target.value)}
-              placeholder="Write the page content here…"
-            />
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-slate-900">Page content</h3>
+              <span className="text-xs text-slate-400">Drag the handle to reorder</span>
+            </div>
+            <BlockEditor blocks={blocks} onChange={setBlocks} />
           </div>
 
           <div className="card p-5">
@@ -88,7 +104,7 @@ export default function PageForm({ initial }: Props) {
           </div>
         </div>
 
-        {/* Sidebar settings */}
+        {/* Settings */}
         <div className="space-y-4">
           <div className="card p-5">
             <label className="label">Status</label>
@@ -107,7 +123,7 @@ export default function PageForm({ initial }: Props) {
                 placeholder="about-us"
               />
             </div>
-            <p className="field-hint">Auto-generated from the title. Edit to override.</p>
+            <p className="field-hint">This is the page&apos;s address on your live site.</p>
 
             <label className="label mt-4">Template</label>
             <select className="input" value={form.template} onChange={(e) => set('template', e.target.value)}>
