@@ -185,7 +185,13 @@ export default function PageForm({ initial }: Props) {
               </div>
             </div>
             {mode === 'visual' ? (
-              <VisualEditor blocks={blocks} onChange={setBlocks} />
+              <VisualEditor
+                blocks={blocks}
+                onChange={setBlocks}
+                saving={saving}
+                onPreview={preview}
+                onSave={async () => { setSaving(true); await persist(form.status); setSaving(false) }}
+              />
             ) : (
               <BlockEditor blocks={blocks} onChange={setBlocks} />
             )}

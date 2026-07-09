@@ -37,14 +37,14 @@ function BlockView({ block: b, index }: { block: Block; index: number }) {
             <div className="absolute inset-0 grid-dots opacity-40" />
           </div>
           <div className="mx-auto max-w-4xl px-6 text-center">
-            <p className="animate-fade-up text-sm font-semibold uppercase tracking-[0.2em] text-brand-300 opacity-0 [animation-delay:100ms]">
+            <p className="animate-fade-up text-sm font-semibold uppercase tracking-[0.2em] text-brand-300 [animation-delay:100ms]">
               Welcome
             </p>
-            <h1 className="site-heading mt-4 animate-fade-up text-4xl font-bold leading-[1.05] text-white opacity-0 [animation-delay:200ms] sm:text-6xl">
+            <h1 className="site-heading mt-4 animate-fade-up text-4xl font-bold leading-[1.05] text-white [animation-delay:200ms] sm:text-6xl">
               {b.heading}
             </h1>
             {b.subheading && (
-              <p className="mx-auto mt-6 max-w-2xl animate-fade-up text-lg leading-relaxed text-slate-300 opacity-0 [animation-delay:350ms]">
+              <p className="mx-auto mt-6 max-w-2xl animate-fade-up text-lg leading-relaxed text-slate-300 [animation-delay:350ms]">
                 {b.subheading}
               </p>
             )}

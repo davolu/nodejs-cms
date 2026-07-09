@@ -33,8 +33,8 @@ const config: Config = {
         },
       },
       animation: {
-        'fade-up': 'fade-up 0.8s cubic-bezier(0.16,1,0.3,1) forwards',
-        'fade-in': 'fade-in 1s ease forwards',
+        'fade-up': 'fade-up 0.8s cubic-bezier(0.16,1,0.3,1) both',
+        'fade-in': 'fade-in 1s ease both',
         'blob': 'blob 14s ease-in-out infinite',
       },
     },

@@ -11,7 +11,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import {
-  GripVertical, Trash2, Plus, Copy, ChevronUp, ChevronDown,
+  GripVertical, Trash2, Plus, Copy, ChevronUp, ChevronDown, Maximize2, Minimize2, Eye, Save,
   Type, Heading, Image as ImageIcon, MousePointerClick, Quote, LayoutTemplate,
 } from 'lucide-react'
 import { Block, BlockType, makeBlock, blockId, BLOCK_LABELS } from '@/lib/blocks'
@@ -28,15 +28,32 @@ const ADD_MENU: { type: BlockType; icon: any }[] = [
 export default function VisualEditor({
   blocks,
   onChange,
+  onSave,
+  onPreview,
+  saving,
 }: {
   blocks: Block[]
   onChange: (next: Block[]) => void
+  onSave?: () => void
+  onPreview?: () => void
+  saving?: boolean
 }) {
   const [selected, setSelected] = useState<string | null>(null)
+  const [fullscreen, setFullscreen] = useState(false)
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
+
+  // Esc exits fullscreen; lock body scroll while fullscreen.
+  useEffect(() => {
+    if (!fullscreen) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setFullscreen(false) }
+    document.addEventListener('keydown', onKey)
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = prev }
+  }, [fullscreen])
 
   function onDragEnd(e: DragEndEvent) {
     const { active, over } = e
@@ -62,50 +79,91 @@ export default function VisualEditor({
     const next = [...blocks]; const nb = makeBlock(type); next.splice(index, 0, nb); onChange(next); setSelected(nb.id)
   }
 
-  return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white" onClick={() => setSelected(null)}>
-      {/* Fake browser chrome to signal "this is your live page" */}
-      <div className="flex items-center gap-1.5 border-b border-slate-100 bg-slate-50 px-4 py-2.5">
-        <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
-        <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
-        <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
-        <span className="ml-3 text-xs text-slate-400">Live preview — click any element to edit, drag to reorder</span>
-      </div>
+  const canvas = (
+    <div className="min-h-[300px]" onClick={() => setSelected(null)}>
+      <InsertBar onPick={(t) => insertAt(0, t)} />
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+        <SortableContext items={blocks.map((b) => b.id)} strategy={verticalListSortingStrategy}>
+          {blocks.map((block, i) => (
+            <div key={block.id}>
+              <SortableVisualBlock
+                block={block}
+                selected={selected === block.id}
+                first={i === 0}
+                last={i === blocks.length - 1}
+                onSelect={() => setSelected(block.id)}
+                onUpdate={update}
+                onRemove={remove}
+                onDuplicate={duplicate}
+                onMove={move}
+              />
+              <InsertBar onPick={(t) => insertAt(i + 1, t)} />
+            </div>
+          ))}
+        </SortableContext>
+      </DndContext>
 
-      <div className="min-h-[300px]">
-        <InsertBar onPick={(t) => insertAt(0, t)} />
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-          <SortableContext items={blocks.map((b) => b.id)} strategy={verticalListSortingStrategy}>
-            {blocks.map((block, i) => (
-              <div key={block.id}>
-                <SortableVisualBlock
-                  block={block}
-                  selected={selected === block.id}
-                  first={i === 0}
-                  last={i === blocks.length - 1}
-                  onSelect={() => setSelected(block.id)}
-                  onUpdate={update}
-                  onRemove={remove}
-                  onDuplicate={duplicate}
-                  onMove={move}
-                />
-                <InsertBar onPick={(t) => insertAt(i + 1, t)} />
-              </div>
-            ))}
-          </SortableContext>
-        </DndContext>
+      {blocks.length === 0 && (
+        <div className="py-16 text-center text-sm text-slate-400">
+          Empty page. Use the <span className="font-medium text-slate-600">+</span> above to add your first block.
+        </div>
+      )}
+    </div>
+  )
 
-        {blocks.length === 0 && (
-          <div className="py-16 text-center text-sm text-slate-400">
-            Empty page. Use the <span className="font-medium text-slate-600">+</span> above to add your first block.
+  // ── Fullscreen overlay ──
+  if (fullscreen) {
+    return (
+      <div className="fixed inset-0 z-[60] flex flex-col bg-slate-100">
+        <div className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-2.5">
+          <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
+            <LayoutTemplate className="h-4 w-4 text-brand-600" /> Visual editor
+            <span className="hidden text-xs font-normal text-slate-400 sm:inline">— click to edit, drag to reorder</span>
           </div>
-        )}
+          <div className="flex items-center gap-2">
+            {onPreview && <button onClick={onPreview} disabled={saving} className="btn-outline !py-1.5"><Eye className="h-4 w-4" /> Preview</button>}
+            {onSave && <button onClick={onSave} disabled={saving} className="btn-primary !py-1.5"><Save className="h-4 w-4" /> {saving ? 'Saving…' : 'Save'}</button>}
+            <button onClick={() => setFullscreen(false)} className="btn-ghost !py-1.5"><Minimize2 className="h-4 w-4" /> Exit</button>
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto p-4 sm:p-8">
+          <div className="mx-auto max-w-4xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+            <ChromeBar onFullscreen={() => setFullscreen(false)} fullscreen />
+            {canvas}
+          </div>
+        </div>
       </div>
+    )
+  }
+
+  // ── Inline ──
+  return (
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+      <ChromeBar onFullscreen={() => setFullscreen(true)} />
+      {canvas}
     </div>
   )
 }
 
-/* ── Insert bar between blocks ── */
+function ChromeBar({ onFullscreen, fullscreen }: { onFullscreen: () => void; fullscreen?: boolean }) {
+  return (
+    <div className="flex items-center gap-1.5 border-b border-slate-100 bg-slate-50 px-4 py-2.5">
+      <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
+      <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
+      <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
+      <span className="ml-3 hidden text-xs text-slate-400 sm:inline">Live preview — click any element to edit, drag to reorder</span>
+      <button
+        onClick={onFullscreen}
+        className="ml-auto flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-slate-500 hover:bg-slate-200 hover:text-slate-800"
+        title={fullscreen ? 'Exit full screen' : 'Edit in full screen'}
+      >
+        {fullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+        {fullscreen ? 'Exit' : 'Full screen'}
+      </button>
+    </div>
+  )
+}
+
 function InsertBar({ onPick }: { onPick: (t: BlockType) => void }) {
   const [open, setOpen] = useState(false)
   return (
@@ -118,7 +176,7 @@ function InsertBar({ onPick }: { onPick: (t: BlockType) => void }) {
         <Plus className="h-3.5 w-3.5" />
       </button>
       {open && (
-        <div className="absolute top-4 z-20 grid grid-cols-3 gap-1 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl">
+        <div className="absolute top-4 z-30 grid grid-cols-3 gap-1 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl">
           {ADD_MENU.map(({ type, icon: Icon }) => (
             <button
               key={type}
@@ -134,7 +192,6 @@ function InsertBar({ onPick }: { onPick: (t: BlockType) => void }) {
   )
 }
 
-/* ── Sortable, selectable block wrapper with floating toolbar ── */
 function SortableVisualBlock({
   block, selected, first, last, onSelect, onUpdate, onRemove, onDuplicate, onMove,
 }: {
@@ -160,7 +217,6 @@ function SortableVisualBlock({
         selected ? 'outline outline-2 outline-brand-500' : 'hover:outline hover:outline-2 hover:outline-brand-200'
       }`}
     >
-      {/* Floating toolbar */}
       <div
         className={`absolute right-2 top-2 z-20 flex items-center gap-0.5 rounded-lg border border-slate-200 bg-white/95 p-0.5 shadow-md backdrop-blur transition-opacity ${
           selected ? 'opacity-100' : 'opacity-0 group-hover/block:opacity-100'
@@ -185,7 +241,6 @@ function SortableVisualBlock({
   )
 }
 
-/* ── Auto-growing textarea styled to look like rendered text ── */
 function AutoText({
   value, onChange, className, placeholder,
 }: {
@@ -212,7 +267,6 @@ function AutoText({
   )
 }
 
-/* ── The visual, inline-editable rendering of each block ── */
 function EditableBlock({
   block: b, selected, onUpdate,
 }: {
