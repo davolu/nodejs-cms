@@ -28,9 +28,20 @@ export interface Connector {
   accountNamePath?: string
   setupUrl?: string             // where the user creates the OAuth app / gets keys
   custom?: boolean              // added via the UI (stored in settings)
-  baseUrl?: string              // REST connector base URL
+  baseUrl?: string              // REST/API base URL (also used by custom OAuth2 actions)
   restAuthHeader?: string       // REST auth header name (e.g. Authorization)
   restAuthValue?: string        // REST auth header value (e.g. Bearer xxx)
+  actions?: CustomAction[]      // named actions for custom connectors
+}
+
+// A named action on a custom connector. path/body may contain {{placeholders}}
+// filled from the action input (or, in automations, from the submission fields).
+export interface CustomAction {
+  id: string
+  label: string
+  method: string                // GET | POST | PUT | PATCH | DELETE
+  path: string                  // appended to baseUrl, e.g. /tasks or /users/{{id}}
+  body?: string                 // JSON template for non-GET requests
 }
 
 const GOOGLE = {

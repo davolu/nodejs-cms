@@ -1,6 +1,7 @@
 import { settingsRepo, connectionsRepo } from './store'
-import { gmailSend, sheetsAppend, slackPost, hubspotUpsertContact, mailchimpSubscribe, webhookPost } from './actions'
+import { gmailSend, sheetsAppend, slackPost, hubspotUpsertContact, mailchimpSubscribe, webhookPost, runCustomAction } from './actions'
 import { connectorConnected } from './connect'
+import { getAllConnectors } from './custom-connectors'
 
 export interface FormAutomations {
   gmail?: { enabled?: boolean; to?: string }
@@ -9,6 +10,7 @@ export interface FormAutomations {
   hubspot?: { enabled?: boolean }
   mailchimp?: { enabled?: boolean; listId?: string }
   webhook?: { enabled?: boolean; url?: string }
+  custom?: Record<string, { enabled?: boolean }>   // keyed by "custom:<cid>:<aid>"
 }
 
 export async function getFormAutomations(): Promise<FormAutomations> {
@@ -42,6 +44,21 @@ export async function runFormAutomations(form: string, data: Record<string, stri
     on('mailchimp', 'mailchimp', () => (email && auto.mailchimp!.listId) ? mailchimpSubscribe({ listId: auto.mailchimp!.listId!, email, name }) : Promise.resolve()),
     on('webhook', 'webhook', () => auto.webhook!.url ? webhookPost({ url: auto.webhook!.url!, payload: { form, page, data } }) : Promise.resolve()),
   ])
+
+  // Custom connector actions (context = submission fields + form/page).
+  const customCfg = auto.custom || {}
+  if (Object.values(customCfg).some((v) => v?.enabled)) {
+    const all = await getAllConnectors()
+    for (const [key, cfg] of Object.entries(customCfg)) {
+      if (!cfg?.enabled) continue
+      const [, cid, aid] = key.split(':')
+      const c = all.find((x) => x.id === cid)
+      const action = c?.actions?.find((a) => a.id === aid)
+      if (!c || !action) continue
+      if (c.auth !== 'rest' && !(await connectorConnected(cid))) continue
+      tasks.push(runCustomAction(c, action, { form, page, ...data }))
+    }
+  }
 
   await Promise.allSettled(tasks)
 }

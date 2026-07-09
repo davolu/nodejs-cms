@@ -22,6 +22,7 @@ const APPS = [
 export default function AutomationsPage() {
   const [auto, setAuto] = useState<Auto>({})
   const [connected, setConnected] = useState<Set<string>>(new Set())
+  const [items, setItems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -30,14 +31,18 @@ export default function AutomationsPage() {
     Promise.all([
       fetch('/api/settings', { cache: 'no-store' }).then((r) => r.json()),
       fetch('/api/connectors', { cache: 'no-store' }).then((r) => r.json()),
-    ]).then(([s, conns]: [Setting[], ConnItem[]]) => {
+    ]).then(([s, conns]: [Setting[], any[]]) => {
       try { setAuto(JSON.parse(s.find((x) => x.key === 'form_automations')?.value || '{}')) } catch { setAuto({}) }
-      setConnected(new Set((Array.isArray(conns) ? conns : []).filter((c) => c.connected).map((c) => c.id)))
+      const list = Array.isArray(conns) ? conns : []
+      setItems(list)
+      setConnected(new Set(list.filter((c) => c.connected).map((c) => c.id)))
       setLoading(false)
     })
   }, [])
 
   const set = (app: string, patch: any) => setAuto((a) => ({ ...a, [app]: { ...a[app], ...patch } }))
+  const setCustom = (key: string, enabled: boolean) => setAuto((a) => ({ ...a, custom: { ...(a.custom || {}), [key]: { enabled } } }))
+  const customActions = items.filter((it) => it.custom && it.connected).flatMap((it) => (it.actions || []).filter((a: any) => a.id.startsWith('custom:')).map((a: any) => ({ ...a, connectorName: it.name, brand: it.brand })))
 
   async function save() {
     setSaving(true); setSaved(false)
@@ -83,6 +88,23 @@ export default function AutomationsPage() {
               </div>
             )
           })}
+          {customActions.length > 0 && (
+            <div className="pt-2">
+              <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">Custom connector actions</h2>
+              {customActions.map((a) => (
+                <div key={a.id} className="card mb-3 flex items-center gap-3 p-5">
+                  <span className="grid h-10 w-10 place-items-center rounded-xl bg-white ring-1 ring-slate-200"><BrandLogo slug={a.brand} className="h-5 w-5" /></span>
+                  <div className="flex-1">
+                    <div className="font-semibold text-slate-800">{a.label}</div>
+                    <div className="text-xs text-slate-400">{a.connectorName} · fields map from {'{{placeholders}}'} to form data</div>
+                  </div>
+                  <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-slate-600">
+                    <input type="checkbox" checked={!!auto.custom?.[a.id]?.enabled} onChange={(e) => setCustom(a.id, e.target.checked)} /> Enabled
+                  </label>
+                </div>
+              ))}
+            </div>
+          )}
           <p className="flex items-center gap-1.5 text-xs text-slate-400"><Zap className="h-3.5 w-3.5" /> Automations run on every Contact Form / Newsletter submission. Failures never block the submission.</p>
         </div>
       )}

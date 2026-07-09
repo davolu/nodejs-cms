@@ -254,6 +254,44 @@ export async function restRequest(c: { baseUrl?: string; restAuthHeader?: string
   return data
 }
 
+// Fill {{placeholders}} in a template from a context object.
+function interpolate(tpl: string, ctx: Record<string, any>, urlEncode = false): string {
+  return (tpl || '').replace(/\{\{\s*(\w+)\s*\}\}/g, (_, k) => {
+    const v = ctx?.[k] ?? ''
+    return urlEncode ? encodeURIComponent(String(v)) : String(v)
+  })
+}
+export function actionPlaceholders(a: { path?: string; body?: string }): string[] {
+  const keys = new Set<string>()
+  for (const m of `${a.path || ''} ${a.body || ''}`.matchAll(/\{\{\s*(\w+)\s*\}\}/g)) keys.add(m[1])
+  return [...keys]
+}
+
+// Runs a named action defined on a custom connector, resolving auth (REST header or
+// OAuth bearer) and filling placeholders from the input context.
+export async function runCustomAction(c: any, action: { method: string; path: string; body?: string }, input: Record<string, any>) {
+  const method = (action.method || 'GET').toUpperCase()
+  const url = (c.baseUrl || '').replace(/\/$/, '') + interpolate(action.path || '', input, true)
+  const headers: Record<string, string> = { 'content-type': 'application/json' }
+  if (c.auth === 'rest') {
+    if (c.restAuthHeader && c.restAuthValue) headers[c.restAuthHeader] = c.restAuthValue
+  } else {
+    headers['authorization'] = `Bearer ${await getValidToken(c.id)}`
+  }
+  let body: string | undefined
+  if (method !== 'GET') {
+    if (action.body && action.body.trim()) {
+      const filled = interpolate(action.body, input, false)
+      try { JSON.parse(filled); body = filled } catch { body = JSON.stringify(input) }
+    } else body = JSON.stringify(input)
+  }
+  const resp = await fetch(url, { method, headers, body })
+  const text = await resp.text()
+  let data: any; try { data = JSON.parse(text) } catch { data = text }
+  if (!resp.ok) throw new Error(`${resp.status}: ${typeof data === 'string' ? data.slice(0, 120) : JSON.stringify(data).slice(0, 120)}`)
+  return data
+}
+
 // ── Action registry (for the generic /api/actions/[id] runner) ──
 export interface ActionDef { id: string; connector: string; label: string; run: (input: any) => Promise<any>; sample?: any }
 export const ACTIONS: ActionDef[] = [

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { connectorConfigured, isApiKey, isRest } from '@/lib/connectors'
 import { getAllConnectors } from '@/lib/custom-connectors'
 import { connectionsRepo } from '@/lib/store'
-import { ACTIONS } from '@/lib/actions'
+import { ACTIONS, actionPlaceholders } from '@/lib/actions'
 import { isAuthed } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
@@ -18,7 +18,9 @@ export async function GET() {
     const apikey = isApiKey(c)
     const rest = isRest(c)
     const configured = connectorConfigured(c)
-    const actions = rest ? [{ id: `rest:${c.id}`, label: 'REST request', sample: { method: 'GET', path: '/' } }] : (actionsByConnector[c.id] || [])
+    // Named actions defined on a custom connector.
+    const named = (c.actions || []).map((a) => ({ id: `custom:${c.id}:${a.id}`, label: a.label, sample: Object.fromEntries(actionPlaceholders(a).map((k) => [k, ''])) }))
+    const generic = rest ? [{ id: `rest:${c.id}`, label: 'REST request', sample: { method: 'GET', path: '/' } }] : (actionsByConnector[c.id] || [])
     return {
       id: c.id, name: c.name, category: c.category, brand: c.brand, description: c.description,
       auth: c.auth || 'oauth2', apikey, rest, custom: !!c.custom,
@@ -26,7 +28,7 @@ export async function GET() {
       connected: (apikey || rest) ? configured : !!byId[c.id],
       account: byId[c.id]?.account || null,
       clientIdEnv: c.clientIdEnv, clientSecretEnv: c.clientSecretEnv, apiKeyEnv: c.apiKeyEnv || [], setupUrl: c.setupUrl,
-      actions,
+      actions: [...named, ...generic],
     }
   })
   return NextResponse.json(items)
