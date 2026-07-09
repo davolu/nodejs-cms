@@ -10,7 +10,7 @@ export default async function Home() {
   const home = await resolveHomePage()
 
   if (home && home.status === 'published') {
-    return <BlockRenderer blocks={home.blocks} />
+    return <BlockRenderer blocks={home.blocks} theme={home.theme} />
   }
 
   const pages = (await pagesRepo.list()).filter((p) => p.status === 'published' && p.id !== home?.id)

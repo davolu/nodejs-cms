@@ -6,6 +6,7 @@ import { Save, ArrowLeft, Eye, Sparkles, Loader2, LayoutGrid, List } from 'lucid
 import Link from 'next/link'
 import type { Page } from '@/lib/seed'
 import type { Block } from '@/lib/blocks'
+import { THEMES, THEME_NAMES } from '@/lib/blocks'
 import BlockEditor from '@/components/BlockEditor'
 import VisualEditor from '@/components/VisualEditor'
 
@@ -21,6 +22,7 @@ export default function PageForm({ initial }: Props) {
   const [error, setError] = useState('')
   const [slugTouched, setSlugTouched] = useState(editing)
   const [blocks, setBlocks] = useState<Block[]>(initial?.blocks ?? [])
+  const [theme, setTheme] = useState<string>(initial?.theme ?? 'indigo')
   const [mode, setMode] = useState<'visual' | 'form'>('visual')
   const [form, setForm] = useState({
     title: initial?.title ?? '',
@@ -60,6 +62,7 @@ export default function PageForm({ initial }: Props) {
         return
       }
       setBlocks(data.blocks)
+      if (data.theme && THEME_NAMES.includes(data.theme)) setTheme(data.theme)
       setForm((f) => ({
         ...f,
         title: f.title || data.title || '',
@@ -78,7 +81,7 @@ export default function PageForm({ initial }: Props) {
 
   async function persist(status?: 'draft' | 'published'): Promise<Page | null> {
     setError('')
-    const payload = { ...form, blocks, status: status ?? form.status }
+    const payload = { ...form, blocks, theme, status: status ?? form.status }
     const res = await fetch(editing ? `/api/pages/${initial!.id}` : '/api/pages', {
       method: editing ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -188,6 +191,7 @@ export default function PageForm({ initial }: Props) {
               <VisualEditor
                 blocks={blocks}
                 onChange={setBlocks}
+                theme={theme}
                 saving={saving}
                 onPreview={preview}
                 onSave={async () => { setSaving(true); await persist(form.status); setSaving(false) }}
@@ -208,6 +212,30 @@ export default function PageForm({ initial }: Props) {
         </div>
 
         <div className="space-y-4">
+          <div className="card p-5">
+            <label className="label">Theme</label>
+            <p className="mb-3 text-xs text-slate-400">Sets the color palette for this page.</p>
+            <div className="grid grid-cols-4 gap-2">
+              {THEME_NAMES.map((name) => {
+                const t = THEMES[name]
+                const active = theme === name
+                return (
+                  <button
+                    key={name}
+                    type="button"
+                    onClick={() => setTheme(name)}
+                    title={name}
+                    className={`group relative h-9 rounded-lg ring-offset-2 transition ${active ? 'ring-2 ring-slate-900' : 'ring-1 ring-slate-200 hover:ring-slate-300'}`}
+                    style={{ backgroundImage: `linear-gradient(120deg, ${t.from}, ${t.to})` }}
+                  >
+                    <span className="sr-only">{name}</span>
+                  </button>
+                )
+              })}
+            </div>
+            <p className="field-hint capitalize">Selected: {theme}</p>
+          </div>
+
           <div className="card p-5">
             <label className="label">Status</label>
             <select className="input" value={form.status} onChange={(e) => set('status', e.target.value)}>

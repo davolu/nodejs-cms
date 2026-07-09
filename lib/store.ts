@@ -24,6 +24,7 @@ export function slugify(input: string): string {
 const toPage = (r: any): Page => ({
   id: r.id, title: r.title, slug: r.slug,
   blocks: Array.isArray(r.blocks) ? r.blocks : (typeof r.blocks === 'string' ? JSON.parse(r.blocks || '[]') : []),
+  theme: r.theme || 'indigo',
   template: r.template,
   metaTitle: r.meta_title, metaDescription: r.meta_desc, status: r.status,
   updatedAt: new Date(r.updated_at).toISOString(), createdAt: new Date(r.created_at).toISOString(),
@@ -67,6 +68,7 @@ export const pagesRepo = {
       title: input.title || 'Untitled page',
       slug: input.slug || slugify(input.title || 'untitled-page'),
       blocks: Array.isArray(input.blocks) ? input.blocks : [],
+      theme: input.theme || 'indigo',
       template: input.template || 'default',
       metaTitle: input.metaTitle || '',
       metaDescription: input.metaDescription || '',
@@ -76,9 +78,9 @@ export const pagesRepo = {
     }
     if (hasDb()) {
       await query(
-        `INSERT INTO pages (id,title,slug,blocks,template,meta_title,meta_desc,status,updated_at,created_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-        [page.id, page.title, page.slug, JSON.stringify(page.blocks), page.template, page.metaTitle, page.metaDescription, page.status, page.updatedAt, page.createdAt]
+        `INSERT INTO pages (id,title,slug,blocks,theme,template,meta_title,meta_desc,status,updated_at,created_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+        [page.id, page.title, page.slug, JSON.stringify(page.blocks), page.theme, page.template, page.metaTitle, page.metaDescription, page.status, page.updatedAt, page.createdAt]
       )
     } else {
       mem.pages.unshift(page)
@@ -91,8 +93,8 @@ export const pagesRepo = {
     const merged: Page = { ...existing, ...input, id, updatedAt: now() }
     if (hasDb()) {
       await query(
-        `UPDATE pages SET title=$2,slug=$3,blocks=$4,template=$5,meta_title=$6,meta_desc=$7,status=$8,updated_at=$9 WHERE id=$1`,
-        [id, merged.title, merged.slug, JSON.stringify(merged.blocks), merged.template, merged.metaTitle, merged.metaDescription, merged.status, merged.updatedAt]
+        `UPDATE pages SET title=$2,slug=$3,blocks=$4,theme=$5,template=$6,meta_title=$7,meta_desc=$8,status=$9,updated_at=$10 WHERE id=$1`,
+        [id, merged.title, merged.slug, JSON.stringify(merged.blocks), merged.theme, merged.template, merged.metaTitle, merged.metaDescription, merged.status, merged.updatedAt]
       )
     } else {
       const i = mem.pages.findIndex((p) => p.id === id)

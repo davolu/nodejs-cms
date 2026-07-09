@@ -7,6 +7,7 @@ export interface Page {
   title: string
   slug: string
   blocks: Block[]
+  theme: string
   template: string
   metaTitle: string
   metaDescription: string
@@ -30,20 +31,9 @@ export interface Post {
 }
 
 export interface MediaItem {
-  id: string
-  filename: string
-  url: string
-  alt: string
-  mimeType: string
-  sizeKb: number
-  createdAt: string
+  id: string; filename: string; url: string; alt: string; mimeType: string; sizeKb: number; createdAt: string
 }
-
-export interface Setting {
-  key: string
-  value: string
-  updatedAt: string
-}
+export interface Setting { key: string; value: string; updatedAt: string }
 
 const iso = (d: string) => new Date(d).toISOString()
 
@@ -52,11 +42,20 @@ export const seedPages: Page[] = [
     id: 'pg_home',
     title: 'Home',
     slug: 'home',
+    theme: 'indigo',
     blocks: [
-      { id: 'b1', type: 'hero', heading: 'Ship content, not tickets', subheading: 'Acme gives your team a fast, friendly way to publish pages and posts.' },
-      { id: 'b2', type: 'paragraph', text: 'This entire page was built in the ContentHub editor by dragging blocks into place — no code, no deploys.' },
-      { id: 'b3', type: 'image', url: 'https://picsum.photos/seed/acmehome/1200/600', alt: 'Team collaborating' },
-      { id: 'b4', type: 'button', label: 'Read the blog', href: '/blog' },
+      { id: 'b1', type: 'hero', variant: 'gradient', align: 'center', heading: 'Ship content, not tickets', subheading: 'Acme gives your team a fast, friendly way to publish pages and posts.', label: 'Get started', href: '#start' },
+      { id: 'b2', type: 'features', bg: 'none', heading: 'Why teams choose Acme', features: [
+        { title: 'Fast', text: 'Publish changes in seconds — no engineering queue.' },
+        { title: 'Flexible', text: 'Drag blocks to build any page you can imagine.' },
+        { title: 'On-brand', text: 'Pick a theme and every page stays consistent.' },
+      ] },
+      { id: 'b3', type: 'stats', bg: 'tint', stats: [
+        { value: '10k+', label: 'Pages published' },
+        { value: '4.9/5', label: 'Customer rating' },
+        { value: '99.9%', label: 'Uptime' },
+      ] },
+      { id: 'b4', type: 'cta', variant: 'brand', heading: 'Start building your site today', label: 'Create a page', href: '#' },
     ],
     template: 'landing',
     metaTitle: 'Acme — Ship content, not tickets',
@@ -69,10 +68,11 @@ export const seedPages: Page[] = [
     id: 'pg_about',
     title: 'About Us',
     slug: 'about',
+    theme: 'emerald',
     blocks: [
-      { id: 'b1', type: 'heading', text: 'Our story' },
-      { id: 'b2', type: 'paragraph', text: 'We started in 2019 with a simple idea: content management should be fast and pleasant.' },
-      { id: 'b3', type: 'quote', text: 'The best CMS is the one your team actually enjoys using.', cite: 'Founder, Acme' },
+      { id: 'b1', type: 'hero', variant: 'split', align: 'left', heading: 'We make publishing effortless', subheading: 'Founded in 2019 to make content management fast and pleasant.', url: 'https://picsum.photos/seed/aboutteam/1000/900', label: 'Meet the team', href: '#team' },
+      { id: 'b2', type: 'paragraph', align: 'left', text: 'We started with a simple idea: content management should feel great, not like a chore. Today thousands of teams use Acme to run their sites.' },
+      { id: 'b3', type: 'quote', variant: 'plain', text: 'The best CMS is the one your team actually enjoys using.', cite: 'Founder, Acme' },
     ],
     template: 'default',
     metaTitle: 'About Us — Acme',
@@ -85,9 +85,10 @@ export const seedPages: Page[] = [
     id: 'pg_pricing',
     title: 'Pricing',
     slug: 'pricing',
+    theme: 'amber',
     blocks: [
-      { id: 'b1', type: 'heading', text: 'Simple pricing' },
-      { id: 'b2', type: 'paragraph', text: 'Transparent plans for teams of every size. This page is a draft — publish it to make it live.' },
+      { id: 'b1', type: 'hero', variant: 'minimal', align: 'left', heading: 'Simple, honest pricing', subheading: 'Pick a plan that grows with you.' },
+      { id: 'b2', type: 'paragraph', align: 'left', text: 'This page is a draft — publish it to make it live.' },
     ],
     template: 'default',
     metaTitle: 'Pricing — Acme',
@@ -100,10 +101,10 @@ export const seedPages: Page[] = [
     id: 'pg_contact',
     title: 'Contact',
     slug: 'contact',
+    theme: 'sky',
     blocks: [
-      { id: 'b1', type: 'heading', text: 'Get in touch' },
-      { id: 'b2', type: 'paragraph', text: 'Reach the Acme team. We usually reply within one business day.' },
-      { id: 'b3', type: 'button', label: 'Email us', href: 'mailto:hello@acme.example.com' },
+      { id: 'b1', type: 'hero', variant: 'light', align: 'center', heading: 'Get in touch', subheading: 'We usually reply within one business day.' },
+      { id: 'b2', type: 'cta', variant: 'dark', heading: 'Prefer email?', label: 'Email us', href: 'mailto:hello@acme.example.com' },
     ],
     template: 'contact',
     metaTitle: 'Contact — Acme',
@@ -115,45 +116,9 @@ export const seedPages: Page[] = [
 ]
 
 export const seedPosts: Post[] = [
-  {
-    id: 'ps_launch',
-    title: 'Introducing ContentHub',
-    slug: 'introducing-contenthub',
-    excerpt: 'Today we are launching a lighter, faster way to manage your website content.',
-    body: 'ContentHub focuses on the essentials: pages, posts, media, and SEO. Everything you publish shows up on your live site instantly.\n\nNo more waiting on engineering for a copy change.',
-    featuredImage: 'https://picsum.photos/seed/launch/1200/600',
-    metaTitle: 'Introducing ContentHub',
-    metaDescription: 'A lighter, faster CMS.',
-    status: 'published',
-    updatedAt: iso('2026-01-12'),
-    createdAt: iso('2026-01-12'),
-  },
-  {
-    id: 'ps_seo',
-    title: '5 SEO Fields That Actually Matter',
-    slug: 'seo-fields-that-matter',
-    excerpt: 'Meta titles, descriptions, slugs — here is where to spend your effort.',
-    body: 'On-page SEO does not need to be complicated. Get the title, description, and slug right and you are most of the way there.',
-    featuredImage: 'https://picsum.photos/seed/seo/1200/600',
-    metaTitle: '5 SEO Fields That Actually Matter',
-    metaDescription: 'Practical on-page SEO.',
-    status: 'published',
-    updatedAt: iso('2026-01-05'),
-    createdAt: iso('2026-01-05'),
-  },
-  {
-    id: 'ps_draft',
-    title: 'Roadmap for Q2',
-    slug: 'roadmap-q2',
-    excerpt: 'A look at what is coming next quarter.',
-    body: 'Draft body — not published yet.',
-    featuredImage: 'https://picsum.photos/seed/roadmap/1200/600',
-    metaTitle: 'Roadmap for Q2',
-    metaDescription: 'What is next.',
-    status: 'draft',
-    updatedAt: iso('2026-01-20'),
-    createdAt: iso('2026-01-18'),
-  },
+  { id: 'ps_launch', title: 'Introducing ContentHub', slug: 'introducing-contenthub', excerpt: 'Today we are launching a lighter, faster way to manage your website content.', body: 'ContentHub focuses on the essentials: pages, posts, media, and SEO. Everything you publish shows up on your live site instantly.\n\nNo more waiting on engineering for a copy change.', featuredImage: 'https://picsum.photos/seed/launch/1200/600', metaTitle: 'Introducing ContentHub', metaDescription: 'A lighter, faster CMS.', status: 'published', updatedAt: iso('2026-01-12'), createdAt: iso('2026-01-12') },
+  { id: 'ps_seo', title: '5 SEO Fields That Actually Matter', slug: 'seo-fields-that-matter', excerpt: 'Meta titles, descriptions, slugs — here is where to spend your effort.', body: 'On-page SEO does not need to be complicated. Get the title, description, and slug right and you are most of the way there.', featuredImage: 'https://picsum.photos/seed/seo/1200/600', metaTitle: '5 SEO Fields That Actually Matter', metaDescription: 'Practical on-page SEO.', status: 'published', updatedAt: iso('2026-01-05'), createdAt: iso('2026-01-05') },
+  { id: 'ps_draft', title: 'Roadmap for Q2', slug: 'roadmap-q2', excerpt: 'A look at what is coming next quarter.', body: 'Draft body — not published yet.', featuredImage: 'https://picsum.photos/seed/roadmap/1200/600', metaTitle: 'Roadmap for Q2', metaDescription: 'What is next.', status: 'draft', updatedAt: iso('2026-01-20'), createdAt: iso('2026-01-18') },
 ]
 
 export const seedMedia: MediaItem[] = [

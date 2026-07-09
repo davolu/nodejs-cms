@@ -42,7 +42,7 @@ export default async function PublicPage({
           </div>
         </section>
       )}
-      <BlockRenderer blocks={page.blocks} />
+      <BlockRenderer blocks={page.blocks} theme={page.theme} />
     </>
   )
 }
