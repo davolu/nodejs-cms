@@ -4,7 +4,7 @@
 // The 9 original blocks (hero/heading/paragraph/image/button/quote/features/stats/cta)
 // stay bespoke; everything here is rendered by WidgetRenderer and edited generically.
 
-export type FieldType = 'text' | 'textarea' | 'url' | 'select' | 'number' | 'items' | 'globalblock' | 'collection'
+export type FieldType = 'text' | 'textarea' | 'url' | 'select' | 'number' | 'items' | 'globalblock' | 'collection' | 'toggle'
 export interface Field {
   key: string
   label: string
@@ -169,6 +169,12 @@ export const WIDGETS: WidgetDef[] = [
   // ── Members ──
   { type: 'authform', label: 'Login / Signup', category: 'Members', icon: 'UserRound', kind: 'auth',
     defaults: { heading: 'Members area' }, fields: [txt('heading', 'Heading')] },
+  { type: 'social_login', label: 'Social Login', category: 'Members', icon: 'LogIn', kind: 'social_login',
+    defaults: { heading: 'Sign in', google: true, github: true, redirect: '/account' },
+    fields: [txt('heading', 'Heading (optional)'),
+      { key: 'google', label: 'Sign in with Google', type: 'toggle' },
+      { key: 'github', label: 'Sign in with GitHub', type: 'toggle' },
+      txt('redirect', 'Redirect after login', '/account')] },
 
   // ── Social ──
   { type: 'social', label: 'Social Icons', category: 'Social', icon: 'Share2', kind: 'social',

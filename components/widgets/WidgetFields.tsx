@@ -62,6 +62,11 @@ function FieldInput({ field: f, value, onChange }: { field: Field; value: any; o
     </select>
   )
   if (f.type === 'number') return <input type="number" className="input" value={value ?? 0} onChange={(e) => onChange(Number(e.target.value))} />
+  if (f.type === 'toggle') return (
+    <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600">
+      <input type="checkbox" checked={value !== false} onChange={(e) => onChange(e.target.checked)} /> {f.label}
+    </label>
+  )
   if (f.type === 'url') return <MediaInput value={value ?? ''} onChange={onChange} placeholder={f.placeholder} />
   if (f.type === 'globalblock') return <GlobalBlockPicker value={value ?? ''} onChange={onChange} />
   if (f.type === 'collection') return <CollectionPicker value={value ?? ''} onChange={onChange} />

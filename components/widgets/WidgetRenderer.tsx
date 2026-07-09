@@ -9,6 +9,7 @@ import {
 import type { Block } from '@/lib/blocks'
 import Reveal from '@/components/site/Reveal'
 import { widgetDef } from '@/lib/widgets'
+import { BrandLogo } from '@/components/widgets/AppIcon'
 import { useCart, formatMoney } from '@/components/shop/CartProvider'
 
 const grad = { backgroundImage: 'linear-gradient(120deg, var(--from), var(--to))' }
@@ -273,6 +274,8 @@ export default function WidgetRenderer({ block }: { block: Block }) {
       return <DriveFiles p={p} />
     case 'calendar_events':
       return <CalendarEvents p={p} />
+    case 'social_login':
+      return <SocialLogin p={p} />
     case 'faq':
       return <Faq heading={p.heading} items={p.items || []} />
     case 'tabs':
@@ -571,6 +574,34 @@ function CalendarEvents({ p }: { p: any }) {
         ))}
       </ul>
     </AppShell>
+  )
+}
+
+function SocialLogin({ p }: { p: any }) {
+  const [providers, setProviders] = useState<any[]>([])
+  useEffect(() => { fetch('/api/auth/social/providers').then((r) => r.json()).then((d) => setProviders(d.providers || [])).catch(() => {}) }, [])
+  const enabled = providers.filter((pr) => pr.configured && p[pr.id] !== false)
+  const next = encodeURIComponent(p.redirect || '/account')
+  return (
+    <section className="px-6 py-10">
+      <div className="mx-auto max-w-sm text-center">
+        {p.heading && <h2 className="site-heading mb-5 text-2xl font-bold text-slate-900">{p.heading}</h2>}
+        {enabled.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-400">
+            Connect Google or GitHub in <span className="font-medium">Connectors</span> to enable social sign-in.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {enabled.map((pr) => (
+              <a key={pr.id} href={`/api/auth/social/${pr.id}?next=${next}`}
+                className="flex w-full items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50">
+                <BrandLogo slug={pr.brand} className="h-5 w-5" /> Continue with {pr.name}
+              </a>
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
   )
 }
 

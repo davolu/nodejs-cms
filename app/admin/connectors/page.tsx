@@ -11,7 +11,7 @@ interface Item {
   auth: string; apikey: boolean; rest?: boolean; custom?: boolean
   configured: boolean; connected: boolean; account: { email?: string; name?: string } | null
   clientIdEnv?: string; clientSecretEnv?: string; apiKeyEnv: string[]; setupUrl?: string
-  actions: Action[]
+  actions: Action[]; powers?: string[]
 }
 
 export default function ConnectorsPage() {
@@ -81,6 +81,9 @@ export default function ConnectorsPage() {
                     </div>
                     <div className="font-semibold text-slate-800">{it.name}</div>
                     <p className="mt-0.5 flex-1 text-sm text-slate-500">{it.description}</p>
+                    {it.powers && it.powers.length > 0 && (
+                      <p className="mt-2 text-xs text-brand-600">⚡ Powers: {it.powers.join(', ')}</p>
+                    )}
                     {it.connected && it.account?.email && <p className="mt-2 truncate text-xs text-slate-400">{it.account.email}</p>}
                     {it.connected && it.apikey && <p className="mt-2 text-xs text-slate-400">Configured via environment</p>}
 

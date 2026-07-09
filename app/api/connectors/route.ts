@@ -7,6 +7,15 @@ import { isAuthed } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
+// Which on-page widgets each connector powers (surfaced in the Connectors UI).
+const POWERS: Record<string, string[]> = {
+  gmail: ['Sign in with Google'],
+  github: ['Sign in with GitHub'],
+  'google-sheets': ['Sheet Table widget'],
+  'google-drive': ['Drive Files widget'],
+  'google-calendar': ['Calendar Events widget'],
+}
+
 // Status list for the admin Connectors page: configured (creds present) + connected.
 export async function GET() {
   if (!isAuthed()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -29,6 +38,7 @@ export async function GET() {
       account: byId[c.id]?.account || null,
       clientIdEnv: c.clientIdEnv, clientSecretEnv: c.clientSecretEnv, apiKeyEnv: c.apiKeyEnv || [], setupUrl: c.setupUrl,
       actions: [...named, ...generic],
+      powers: POWERS[c.id] || [],
     }
   })
   return NextResponse.json(items)
