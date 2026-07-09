@@ -10,23 +10,13 @@ import {
   verticalListSortingStrategy, useSortable,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import {
-  GripVertical, Trash2, Plus, X,
-  Type, Heading, Image as ImageIcon, MousePointerClick, Quote, LayoutTemplate, Grid3x3, BarChart3, Megaphone,
-} from 'lucide-react'
-import { Block, BlockType, makeBlock, BLOCK_LABELS, variantsFor } from '@/lib/blocks'
+import { GripVertical, Trash2, Plus, X } from 'lucide-react'
+import { Block, BlockType, makeBlock, labelFor, variantsFor } from '@/lib/blocks'
+import { isWidget } from '@/lib/widgets'
+import WidgetFields from '@/components/widgets/WidgetFields'
+import { CATALOG, iconMap } from '@/components/widgets/catalog'
 
-const ADD_MENU: { type: BlockType; icon: any }[] = [
-  { type: 'hero', icon: LayoutTemplate },
-  { type: 'heading', icon: Heading },
-  { type: 'paragraph', icon: Type },
-  { type: 'image', icon: ImageIcon },
-  { type: 'button', icon: MousePointerClick },
-  { type: 'quote', icon: Quote },
-  { type: 'features', icon: Grid3x3 },
-  { type: 'stats', icon: BarChart3 },
-  { type: 'cta', icon: Megaphone },
-]
+const ADD_TYPES: BlockType[] = CATALOG.map((c) => c.type)
 
 export default function BlockEditor({ blocks, onChange }: { blocks: Block[]; onChange: (next: Block[]) => void }) {
   const [adding, setAdding] = useState(false)
@@ -63,12 +53,12 @@ export default function BlockEditor({ blocks, onChange }: { blocks: Block[]; onC
       <div className="relative mt-3">
         <button type="button" onClick={() => setAdding((v) => !v)} className="btn-outline w-full"><Plus className="h-4 w-4" /> Add block</button>
         {adding && (
-          <div className="absolute z-10 mt-2 grid w-full grid-cols-2 gap-2 rounded-xl border border-slate-200 bg-white p-2 shadow-lg sm:grid-cols-3">
-            {ADD_MENU.map(({ type, icon: Icon }) => (
-              <button key={type} type="button" onClick={() => add(type)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
-                <Icon className="h-4 w-4 text-slate-400" /> {BLOCK_LABELS[type]}
+          <div className="absolute z-10 mt-2 grid max-h-80 w-full grid-cols-2 gap-2 overflow-y-auto rounded-xl border border-slate-200 bg-white p-2 shadow-lg sm:grid-cols-3">
+            {ADD_TYPES.map((type) => { const Icon = iconMap[type] || Plus; return (
+              <button key={type} type="button" onClick={() => add(type)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50">
+                <Icon className="h-4 w-4 shrink-0 text-slate-400" /> <span className="truncate">{labelFor(type)}</span>
               </button>
-            ))}
+            )})}
           </div>
         )}
       </div>
@@ -87,7 +77,7 @@ function SortableBlock({ block, onUpdate, onRemove }: { block: Block; onUpdate: 
       </button>
       <div className="min-w-0 flex-1">
         <div className="mb-2 flex items-center justify-between">
-          <span className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-slate-500">{BLOCK_LABELS[block.type]}</span>
+          <span className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-slate-500">{labelFor(block.type)}</span>
           <button type="button" onClick={() => onRemove(block.id)} className="btn-danger !px-2 !py-1" aria-label="Delete block"><Trash2 className="h-4 w-4" /></button>
         </div>
         <BlockFields block={block} onUpdate={onUpdate} />
@@ -210,6 +200,7 @@ function BlockFields({ block: b, onUpdate }: { block: Block; onUpdate: (id: stri
         </div>
       )
     default:
+      if (isWidget(b.type)) return <WidgetFields block={b} onUpdate={onUpdate} />
       return null
   }
 }

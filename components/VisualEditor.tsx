@@ -12,20 +12,15 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import {
   GripVertical, Trash2, Plus, Copy, ChevronUp, ChevronDown, Maximize2, Minimize2,
-  Eye, Save, Sliders, Check, X, Search,
-  Type, Heading, Image as ImageIcon, MousePointerClick, Quote, LayoutTemplate, Grid3x3, BarChart3, Megaphone,
+  Eye, Save, Sliders, Check, X, Search, LayoutTemplate,
 } from 'lucide-react'
-import { Block, BlockType, makeBlock, blockId, BLOCK_LABELS, variantsFor, themeVars } from '@/lib/blocks'
+import { Block, BlockType, makeBlock, blockId, labelFor, variantsFor, themeVars } from '@/lib/blocks'
+import { isWidget } from '@/lib/widgets'
+import WidgetRenderer from '@/components/widgets/WidgetRenderer'
+import WidgetFields from '@/components/widgets/WidgetFields'
+import { CATALOG, catalogByCategory, iconMap, CATALOG_COUNT } from '@/components/widgets/catalog'
 
-const ICONS: Record<BlockType, any> = {
-  hero: LayoutTemplate, heading: Heading, paragraph: Type, image: ImageIcon,
-  button: MousePointerClick, quote: Quote, features: Grid3x3, stats: BarChart3, cta: Megaphone,
-}
-const CATEGORIES: { label: string; types: BlockType[] }[] = [
-  { label: 'Sections', types: ['hero', 'features', 'stats', 'cta', 'quote'] },
-  { label: 'Basic', types: ['heading', 'paragraph', 'image', 'button'] },
-]
-const ALL_TYPES: BlockType[] = ['hero', 'heading', 'paragraph', 'image', 'button', 'quote', 'features', 'stats', 'cta']
+const ALL_TYPES: BlockType[] = CATALOG.map((c) => c.type)
 
 export default function VisualEditor({
   blocks, onChange, theme, onSave, onPreview, saving,
@@ -144,7 +139,7 @@ export default function VisualEditor({
           <DragOverlay dropAnimation={null}>
             {paletteDrag ? (
               <div className="flex items-center gap-2 rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-lg">
-                {(() => { const I = ICONS[paletteDrag]; return <I className="h-4 w-4 text-brand-600" /> })()} {BLOCK_LABELS[paletteDrag]}
+                {(() => { const I = iconMap[paletteDrag] || Plus; return <I className="h-4 w-4 text-brand-600" /> })()} {labelFor(paletteDrag)}
               </div>
             ) : null}
           </DragOverlay>
@@ -167,28 +162,28 @@ export default function VisualEditor({
 /* ── Left widget panel (Elementor-style) ── */
 function WidgetPanel({ onAdd }: { onAdd: (t: BlockType) => void }) {
   const [q, setQ] = useState('')
-  const query = q.trim().toLowerCase()
+  const groups = catalogByCategory(q)
   return (
     <aside className="hidden w-72 shrink-0 flex-col border-r border-slate-200 bg-white md:flex">
       <div className="border-b border-slate-100 p-3">
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search widgets…" className="input !pl-9" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={`Search ${CATALOG_COUNT} widgets…`} className="input !pl-9" />
         </div>
       </div>
       <div className="flex-1 overflow-y-auto p-3">
-        {CATEGORIES.map((cat) => {
-          const types = cat.types.filter((t) => !query || BLOCK_LABELS[t].toLowerCase().includes(query))
-          if (types.length === 0) return null
-          return (
-            <div key={cat.label} className="mb-5">
-              <div className="mb-2 px-1 text-xs font-semibold uppercase tracking-wider text-slate-400">{cat.label}</div>
-              <div className="grid grid-cols-2 gap-2">
-                {types.map((t) => <WidgetTile key={t} type={t} onAdd={onAdd} />)}
-              </div>
+        {groups.map((cat) => (
+          <div key={cat.label} className="mb-5">
+            <div className="mb-2 flex items-center justify-between px-1">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">{cat.label}</span>
+              <span className="text-[10px] text-slate-300">{cat.items.length}</span>
             </div>
-          )
-        })}
+            <div className="grid grid-cols-2 gap-2">
+              {cat.items.map((it) => <WidgetTile key={it.type} type={it.type} onAdd={onAdd} />)}
+            </div>
+          </div>
+        ))}
+        {groups.length === 0 && <p className="px-1 text-sm text-slate-400">No widgets match “{q}”.</p>}
         <p className="px-1 text-xs text-slate-400">Drag a widget onto the canvas, or click to add it.</p>
       </div>
     </aside>
@@ -197,17 +192,17 @@ function WidgetPanel({ onAdd }: { onAdd: (t: BlockType) => void }) {
 
 function WidgetTile({ type, onAdd }: { type: BlockType; onAdd: (t: BlockType) => void }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: `new:${type}` })
-  const Icon = ICONS[type]
+  const Icon = iconMap[type] || Plus
   return (
     <button
       ref={setNodeRef}
       {...attributes}
       {...listeners}
       onClick={() => onAdd(type)}
-      className={`flex cursor-grab flex-col items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-4 text-center transition-all hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-md active:cursor-grabbing ${isDragging ? 'opacity-40' : ''}`}
+      className={`flex cursor-grab flex-col items-center gap-2 rounded-xl border border-slate-200 bg-white px-2 py-3 text-center transition-all hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-md active:cursor-grabbing ${isDragging ? 'opacity-40' : ''}`}
     >
-      <Icon className="h-6 w-6 text-slate-500" />
-      <span className="text-xs font-medium text-slate-600">{BLOCK_LABELS[type]}</span>
+      <Icon className="h-5 w-5 text-slate-500" />
+      <span className="text-[11px] font-medium leading-tight text-slate-600">{labelFor(type)}</span>
     </button>
   )
 }
@@ -248,10 +243,10 @@ function InsertBar({ onPick }: { onPick: (t: BlockType) => void }) {
         <Plus className="h-3.5 w-3.5" />
       </button>
       {open && (
-        <div className="absolute top-4 z-30 grid grid-cols-3 gap-1 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl">
-          {ALL_TYPES.map((type) => { const Icon = ICONS[type]; return (
-            <button key={type} onClick={() => { onPick(type); setOpen(false) }} className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50">
-              <Icon className="h-4 w-4 text-slate-400" /> {BLOCK_LABELS[type]}
+        <div className="absolute top-4 z-30 grid max-h-72 grid-cols-3 gap-1 overflow-y-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl">
+          {ALL_TYPES.map((type) => { const Icon = iconMap[type] || Plus; return (
+            <button key={type} onClick={() => { onPick(type); setOpen(false) }} className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-left text-sm text-slate-700 hover:bg-slate-50">
+              <Icon className="h-4 w-4 shrink-0 text-slate-400" /> <span className="truncate">{labelFor(type)}</span>
             </button>
           )})}
         </div>
@@ -271,6 +266,7 @@ function SortableVisualBlock({
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: block.id })
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }
   const [showSettings, setShowSettings] = useState(false)
+  const settingsOpen = showSettings || (selected && isWidget(block.type))
 
   return (
     <div ref={setNodeRef} style={style} onClick={(e) => { e.stopPropagation(); onSelect() }}
@@ -283,11 +279,11 @@ function SortableVisualBlock({
         <button onClick={() => onDuplicate(block.id)} className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label="Duplicate"><Copy className="h-4 w-4" /></button>
         <button onClick={() => onRemove(block.id)} className="rounded p-1.5 text-red-500 hover:bg-red-50" aria-label="Delete"><Trash2 className="h-4 w-4" /></button>
       </div>
-      <span className="absolute left-2 top-2 z-20 rounded bg-slate-900/70 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white opacity-0 transition-opacity group-hover/block:opacity-100">{BLOCK_LABELS[block.type]}</span>
+      <span className="absolute left-2 top-2 z-20 rounded bg-slate-900/70 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white opacity-0 transition-opacity group-hover/block:opacity-100">{labelFor(block.type)}</span>
 
       <EditableBlock block={block} onUpdate={onUpdate} />
 
-      {showSettings && (
+      {settingsOpen && (
         <div className="border-t border-slate-200 bg-slate-50 p-4" onClick={(e) => e.stopPropagation()}>
           <SettingsPanel block={block} onUpdate={onUpdate} onClose={() => setShowSettings(false)} />
         </div>
@@ -416,12 +412,24 @@ function EditableBlock({ block: b, onUpdate }: { block: Block; onUpdate: (id: st
         </div>
       )
     default:
+      if (isWidget(b.type)) return <div className="[&_a]:pointer-events-none [&_button]:pointer-events-none [&_iframe]:pointer-events-none [&_input]:pointer-events-none">{<WidgetRenderer block={b} />}</div>
       return null
   }
 }
 
 function SettingsPanel({ block: b, onUpdate, onClose }: { block: Block; onUpdate: (id: string, patch: Partial<Block>) => void; onClose: () => void }) {
   const set = (patch: Partial<Block>) => onUpdate(b.id, patch)
+  if (isWidget(b.type)) {
+    return (
+      <div className="space-y-3 text-sm">
+        <div className="flex items-center justify-between">
+          <span className="font-semibold text-slate-700">{labelFor(b.type)} settings</span>
+          <button onClick={onClose} className="rounded p-1 text-slate-400 hover:bg-slate-200"><X className="h-4 w-4" /></button>
+        </div>
+        <WidgetFields block={b} onUpdate={onUpdate} />
+      </div>
+    )
+  }
   const variants = variantsFor(b.type)
   const hasAlign = ['hero', 'heading', 'paragraph', 'button'].includes(b.type)
   const hasBg = ['features', 'stats'].includes(b.type)

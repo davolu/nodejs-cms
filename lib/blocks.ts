@@ -2,9 +2,11 @@
 // Blocks carry style "variants" so the same type can render many ways, and each
 // page carries a color THEME — together they make pages genuinely different.
 
-export type BlockType =
+export type CoreBlockType =
   | 'hero' | 'heading' | 'paragraph' | 'image' | 'button' | 'quote'
   | 'features' | 'stats' | 'cta'
+// Block type is a core type OR any registered widget type (kept loose for extensibility).
+export type BlockType = CoreBlockType | (string & {})
 
 export interface FeatureItem { title: string; text: string }
 export interface StatItem { value: string; label: string }
@@ -31,6 +33,8 @@ export interface Block {
   // composite
   features?: FeatureItem[]
   stats?: StatItem[]
+  // registry widgets store their config here
+  props?: Record<string, any>
 }
 
 /* ── Color themes (per page) ── */
@@ -65,7 +69,9 @@ export function variantsFor(type: BlockType): string[] {
   return VARIANTS[type] || []
 }
 
-export const BLOCK_LABELS: Record<BlockType, string> = {
+import { isWidget, makeWidgetProps, widgetDef } from './widgets'
+
+export const BLOCK_LABELS: Record<CoreBlockType, string> = {
   hero: 'Hero',
   heading: 'Heading',
   paragraph: 'Paragraph',
@@ -77,12 +83,18 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   cta: 'Call to action',
 }
 
+// Label for any block type — core or registered widget.
+export function labelFor(type: string): string {
+  return (BLOCK_LABELS as any)[type] || widgetDef(type)?.label || type
+}
+
 export function blockId(): string {
   return 'blk_' + Math.random().toString(36).slice(2, 9)
 }
 
 export function makeBlock(type: BlockType): Block {
   const id = blockId()
+  if (isWidget(type)) return { id, type, props: makeWidgetProps(type) }
   switch (type) {
     case 'hero':
       return { id, type, variant: 'gradient', align: 'center', heading: 'Your headline goes here', subheading: 'A short supporting sentence that sets the scene.', url: 'https://picsum.photos/seed/' + id + '/1200/800', label: 'Get started', href: '#' }

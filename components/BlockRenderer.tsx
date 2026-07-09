@@ -2,6 +2,8 @@ import Link from 'next/link'
 import { ArrowRight, Check } from 'lucide-react'
 import type { Block } from '@/lib/blocks'
 import { themeVars } from '@/lib/blocks'
+import { isWidget } from '@/lib/widgets'
+import WidgetRenderer from '@/components/widgets/WidgetRenderer'
 import Reveal from '@/components/site/Reveal'
 
 // Renders ordered content blocks into a polished, theme-aware marketing page.
@@ -252,6 +254,7 @@ function BlockView({ block: b }: { block: Block }) {
       )
 
     default:
+      if (isWidget(b.type)) return <WidgetRenderer block={b} />
       return null
   }
 }
