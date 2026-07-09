@@ -5,11 +5,12 @@ import { CartProvider } from '@/components/shop/CartProvider'
 import CartButton from '@/components/shop/CartButton'
 import RawScripts from '@/components/site/RawScripts'
 import JsonLd from '@/components/site/JsonLd'
+import { getBrand, brandCss, brandFontsHref } from '@/lib/brand'
 
 export const dynamic = 'force-dynamic'
 
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
-  const [settings, pages, meta] = await Promise.all([settingsRepo.list(), pagesRepo.list(), getSiteMeta()])
+  const [settings, pages, meta, brand] = await Promise.all([settingsRepo.list(), pagesRepo.list(), getSiteMeta(), getBrand()])
   const get = (k: string) => settings.find((s) => s.key === k)?.value || ''
   const siteTitle = get('site_title') || 'My Site'
   const homeId = get('home_page_id')
@@ -34,15 +35,17 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
   return (
     <CartProvider>
     <JsonLd data={websiteLd} />
+    {brandFontsHref(brand) && <link rel="stylesheet" href={brandFontsHref(brand)} />}
+    <style>{brandCss(brand)}</style>
     <RawScripts html={meta.headScripts} target="head" />
-    <div className="flex min-h-screen flex-col bg-white text-slate-900">
+    <div className="flex min-h-screen flex-col brand-surface" style={{ background: 'var(--brand-bg)', color: 'var(--brand-text)' }}>
       <noscript>
         <style>{`.reveal{opacity:1 !important;transform:none !important}`}</style>
       </noscript>
       <header className="sticky top-0 z-50 border-b border-slate-100 bg-white/70 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5 sm:px-6">
           <Link href="/" className="flex items-center gap-2.5">
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-brand-600 to-accent-500 text-sm font-bold text-white shadow-lg shadow-brand-600/25">
+            <span className="grid h-9 w-9 place-items-center rounded-xl text-sm font-bold text-white shadow-lg" style={{ backgroundImage: 'linear-gradient(120deg, var(--brand-from), var(--brand-to))' }}>
               {initial}
             </span>
             <span className="site-heading text-lg font-bold tracking-tight">{siteTitle}</span>

@@ -84,7 +84,8 @@ export async function POST(req: NextRequest) {
         try { parsed = JSON.parse(st >= 0 && en > st ? cleaned.slice(st, en + 1) : cleaned) }
         catch { send({ step: 'error', message: 'The AI returned an unreadable plan. Try rephrasing.' }); return controller.close() }
 
-        const theme = THEME_NAMES.includes(parsed?.site?.theme) ? parsed.site.theme : 'indigo'
+        // Generated sites render with the global brand tokens for a cohesive look.
+        const theme = 'brand'
         const pageCount = Array.isArray(parsed?.pages) ? parsed.pages.length : 0
         send({ step: 'plan_done', message: `Planned “${S(parsed?.site?.title) || 'your site'}” — ${pageCount} page${pageCount === 1 ? '' : 's'}` })
 

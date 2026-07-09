@@ -5,11 +5,12 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import {
   LayoutDashboard, FileText, Newspaper, Image as ImageIcon,
-  Settings, Layers, Menu, X, ExternalLink, LogOut, Inbox, UserRound, ShoppingBag, Receipt, Navigation, Blocks, Database, CreditCard, LayoutGrid, Link2, Zap, Sparkles,
+  Settings, Layers, Menu, X, ExternalLink, LogOut, Inbox, UserRound, ShoppingBag, Receipt, Navigation, Blocks, Database, CreditCard, LayoutGrid, Link2, Zap, Sparkles, Palette,
 } from 'lucide-react'
 
 const nav = [
   { href: '/admin/generate', label: 'Build with AI', icon: Sparkles },
+  { href: '/admin/brand', label: 'Brand Studio', icon: Palette },
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
   { href: '/admin/pages', label: 'Pages', icon: FileText },
   { href: '/admin/posts', label: 'Posts', icon: Newspaper },

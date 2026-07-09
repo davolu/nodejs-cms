@@ -50,9 +50,11 @@ export const THEMES = {
   slate:   { from: '#334155', to: '#64748b', solid: '#0f172a', tint: '#f1f5f9' },
 } as const
 export type ThemeName = keyof typeof THEMES
-export const THEME_NAMES = Object.keys(THEMES) as ThemeName[]
+export const THEME_NAMES = [...Object.keys(THEMES), 'brand'] as ThemeName[]
 
 export function themeVars(name?: string): Record<string, string> {
+  // The 'brand' theme pulls from the global brand tokens (see lib/brand.ts).
+  if (name === 'brand') return { '--from': 'var(--brand-from)', '--to': 'var(--brand-to)', '--solid': 'var(--brand-solid)', '--tint': 'var(--brand-tint)' }
   const t = (name && (THEMES as any)[name]) || THEMES.indigo
   return { '--from': t.from, '--to': t.to, '--solid': t.solid, '--tint': t.tint }
 }
