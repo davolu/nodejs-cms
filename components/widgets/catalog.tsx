@@ -6,6 +6,7 @@ import {
   Youtube, Music, Music2, Video, Github, Instagram, Twitter, Coffee, MessageCircle,
 } from 'lucide-react'
 import { WIDGETS } from '@/lib/widgets'
+import { appIconComponent } from './AppIcon'
 
 const NAME_ICON: Record<string, any> = {
   LayoutTemplate, Grid3x3, BarChart3, Megaphone, Quote, Heading, Type, ImageIcon, MousePointerClick,
@@ -47,5 +48,5 @@ export function visibleCatalog(installed: string[] = []): CatalogItem[] {
   return CATALOG.filter((c) => !c.app || installed.includes(c.type))
 }
 
-export const iconMap: Record<string, any> = Object.fromEntries(CATALOG.map((c) => [c.type, c.icon]))
+export const iconMap: Record<string, any> = Object.fromEntries(CATALOG.map((c) => [c.type, (c.app && appIconComponent(c.type)) || c.icon]))
 export const CATALOG_COUNT = CATALOG.length

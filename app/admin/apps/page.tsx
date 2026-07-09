@@ -37,7 +37,7 @@ export default function AppsPage() {
             return (
               <div key={a.type} className="card flex flex-col p-5">
                 <div className="mb-2 flex items-center gap-2.5">
-                  <span className="grid h-10 w-10 place-items-center rounded-xl bg-slate-100 text-slate-600">{Icon ? <Icon className="h-5 w-5" /> : null}</span>
+                  <span className="grid h-10 w-10 place-items-center rounded-xl bg-white ring-1 ring-slate-200">{Icon ? <Icon className="h-5 w-5" /> : null}</span>
                   <div className="font-semibold text-slate-800">{a.label}</div>
                 </div>
                 <p className="flex-1 text-sm text-slate-500">{a.appDescription}</p>
