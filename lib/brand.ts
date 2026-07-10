@@ -50,6 +50,7 @@ const btnRadius = (b: Brand) => (b.buttonStyle === 'pill' ? '999px' : b.buttonSt
 export function brandCss(b: Brand): string {
   return `:root{
   --brand-from:${b.primary};--brand-to:${b.accent};--brand-solid:${b.primary};--brand-tint:${b.primary}14;
+  --from:${b.primary};--to:${b.accent};--solid:${b.primary};--tint:${b.primary}14;
   --brand-bg:${b.bg};--brand-surface:${b.surface};--brand-text:${b.text};--brand-heading:${b.heading};
   --brand-radius:${b.radius}px;--brand-btn-radius:${btnRadius(b)};
   --font-sans:${stack(b.bodyFont)};--font-display:${stack(b.headingFont)};
