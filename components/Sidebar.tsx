@@ -44,7 +44,7 @@ export default function Sidebar() {
   }
 
   const NavList = (
-    <nav className="space-y-1">
+    <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto pr-1 [scrollbar-width:thin]">
       {nav.map(({ href, label, icon: Icon, exact }) => {
         const active = isActive(href, exact)
         return (
@@ -65,7 +65,7 @@ export default function Sidebar() {
   )
 
   const Footer = (
-    <div className="mt-auto space-y-1 pt-4">
+    <div className="shrink-0 space-y-1 border-t border-white/10 pt-3 mt-3">
       <a
         href="/"
         target="_blank"
