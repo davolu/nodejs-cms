@@ -244,6 +244,10 @@ export default function WidgetRenderer({ block }: { block: Block }) {
       return <CollectionList p={p} />
     case 'collection_form':
       return <CollectionForm p={p} />
+    case 'content_split':
+      return <ContentSplit p={p} />
+    case 'bento':
+      return <Bento p={p} />
     case 'plans':
       return <PlansWidget p={p} />
     case 'app_youtube':
@@ -735,6 +739,47 @@ function PlansWidget({ p }: { p: any }) {
               <button onClick={() => subscribe(pl.id)} disabled={!!busy} className="mt-5 flex w-full items-center justify-center gap-2 rounded-full py-2.5 text-sm font-semibold text-white disabled:opacity-60" style={grad}>
                 {busy === pl.id ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Subscribe
               </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function ContentSplit({ p }: { p: any }) {
+  const img = p.image || `https://picsum.photos/seed/${p.heading || 'split'}/900/700`
+  const left = p.imageSide === 'left'
+  return (
+    <section className="px-6 py-16">
+      <div className={`mx-auto grid max-w-6xl items-center gap-10 md:grid-cols-2 ${left ? '' : ''}`}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={img} alt="" className={`aspect-[4/3] w-full rounded-3xl object-cover shadow-xl shadow-slate-900/10 ${left ? 'md:order-1' : 'md:order-2'}`} />
+        <div className={left ? 'md:order-2' : 'md:order-1'}>
+          {p.heading && <h2 className="site-heading text-3xl font-bold text-slate-900 sm:text-4xl">{p.heading}</h2>}
+          {p.text && <p className="mt-4 text-lg leading-relaxed text-slate-600">{p.text}</p>}
+          {p.label && <div className="mt-6"><a href={p.href || '#'} className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white shadow-lg" style={grad}>{p.label} <ArrowRight className="h-4 w-4" /></a></div>}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function Bento({ p }: { p: any }) {
+  const items = (p.items || []).slice(0, 6)
+  return (
+    <section className="px-6 py-16">
+      <div className="mx-auto max-w-6xl">
+        {p.heading && <h2 className="site-heading mb-8 text-center text-3xl font-bold text-slate-900 sm:text-4xl">{p.heading}</h2>}
+        <div className="grid auto-rows-[minmax(160px,auto)] grid-cols-1 gap-4 sm:grid-cols-3">
+          {items.map((it: any, i: number) => (
+            <div key={i} className={`flex flex-col justify-between rounded-3xl border border-slate-200 p-6 transition hover:shadow-lg ${i === 0 ? 'sm:col-span-2 sm:row-span-2' : ''}`}
+              style={i === 0 ? { backgroundImage: 'linear-gradient(135deg, var(--tint), transparent)' } : undefined}>
+              <div className="h-8 w-8 rounded-lg" style={grad} />
+              <div>
+                <div className={`font-bold text-slate-900 ${i === 0 ? 'text-2xl' : 'text-lg'}`}>{it.title}</div>
+                <p className="mt-1.5 text-sm text-slate-500">{it.text}</p>
+              </div>
             </div>
           ))}
         </div>

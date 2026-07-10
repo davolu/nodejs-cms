@@ -88,7 +88,7 @@ export function themeVars(name?: string): Record<string, string> {
 
 /* ── Variant catalogs (for the editor + AI validation) ── */
 export const VARIANTS: Partial<Record<BlockType, string[]>> = {
-  hero: ['gradient', 'image', 'light', 'split', 'minimal'],
+  hero: ['gradient', 'image', 'light', 'split', 'minimal', 'centered', 'dark', 'glass', 'mesh', 'screenshot', 'stats', 'newsletter', 'bordered', 'left', 'bigtype', 'angled', 'spotlight', 'waves'],
   image: ['rounded', 'full', 'framed'],
   button: ['gradient', 'solid', 'outline'],
   quote: ['card', 'plain'],

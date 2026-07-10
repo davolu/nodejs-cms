@@ -3,7 +3,7 @@ import { makeWidgetProps, WIDGET_MAP } from './widgets'
 
 // Human-readable block schema shared by the page and site generators.
 export const BLOCK_SCHEMA_DOC = `Block types and their fields:
-- hero: { "type":"hero", "variant": "gradient"|"image"|"light"|"split"|"minimal", "align":"left"|"center", "heading":string, "subheading":string, "label":string(optional button), "href":string, "url":string(only for image/split; use https://picsum.photos/seed/<word>/1200/800) }
+- hero: { "type":"hero", "variant": "gradient"|"image"|"light"|"split"|"minimal"|"centered"|"dark"|"glass"|"mesh"|"screenshot"|"stats"|"newsletter"|"bordered"|"left"|"bigtype"|"angled"|"spotlight"|"waves", "align":"left"|"center", "heading":string, "subheading":string, "label":string(optional button), "href":string, "url":string(only for image/split/screenshot; use https://picsum.photos/seed/<word>/1400/800), "features":[{"title":"10k+","text":"Users"}](only for the "stats" variant, 3 items) }
 - heading: { "type":"heading", "align":"left"|"center", "text":string }
 - paragraph: { "type":"paragraph", "align":"left"|"center", "text":string }
 - image: { "type":"image", "variant":"rounded"|"full"|"framed", "url":"https://picsum.photos/seed/<word>/1200/600", "alt":string }

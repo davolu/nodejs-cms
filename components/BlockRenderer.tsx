@@ -105,6 +105,174 @@ function BlockView({ block: b }: { block: Block }) {
           </section>
         )
       }
+      if (v === 'centered') {
+        return (
+          <section className="relative overflow-hidden py-28 text-center" style={tint}>
+            <div className="mx-auto max-w-3xl px-6">
+              <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 shadow-sm">✦ {b.subheading ? 'New' : 'Welcome'} <span className="text-slate-300">|</span> <span style={{ color: 'var(--solid)' }}>Learn more</span></span>
+              <h1 className="site-heading mt-6 text-5xl font-bold leading-[1.05] tracking-tight text-slate-900 sm:text-6xl">{b.heading}</h1>
+              {b.subheading && <p className="mx-auto mt-5 max-w-2xl text-lg text-slate-600">{b.subheading}</p>}
+              <div className="mt-8 flex items-center justify-center gap-3">{b.label && <Btn label={b.label} href={b.href} variant="gradient" />}<Link href="#" className="rounded-full border-2 border-slate-200 px-6 py-3 text-sm font-semibold text-slate-700 hover:bg-white">Learn more</Link></div>
+            </div>
+          </section>
+        )
+      }
+      if (v === 'dark') {
+        return (
+          <section className="bg-ink-950 py-32 text-center text-white">
+            <div className="mx-auto max-w-3xl px-6">
+              <h1 className="site-heading text-4xl font-bold leading-[1.05] sm:text-6xl">{b.heading}</h1>
+              {b.subheading && <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-400">{b.subheading}</p>}
+              {b.label && <div className="mt-8"><Btn label={b.label} href={b.href} variant="gradient" /></div>}
+            </div>
+          </section>
+        )
+      }
+      if (v === 'glass') {
+        return (
+          <section className="relative isolate overflow-hidden py-32" style={gradient}>
+            <div className="mx-auto max-w-3xl px-6">
+              <div className="rounded-3xl border border-white/20 bg-white/10 p-10 text-center text-white shadow-2xl backdrop-blur-xl">
+                <h1 className="site-heading text-4xl font-bold leading-tight sm:text-5xl">{b.heading}</h1>
+                {b.subheading && <p className="mx-auto mt-5 max-w-2xl text-lg text-white/85">{b.subheading}</p>}
+                {b.label && <div className="mt-8"><Link href={b.href || '#'} className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-slate-900 shadow-lg">{b.label} <ArrowRight className="h-4 w-4" /></Link></div>}
+              </div>
+            </div>
+          </section>
+        )
+      }
+      if (v === 'mesh') {
+        return (
+          <section className="relative isolate overflow-hidden py-32 text-center">
+            <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 opacity-70">
+              <div className="absolute -left-20 -top-20 h-[28rem] w-[28rem] rounded-full blur-3xl" style={{ backgroundColor: 'var(--from)', opacity: 0.25 }} />
+              <div className="absolute -right-10 top-10 h-[26rem] w-[26rem] rounded-full blur-3xl" style={{ backgroundColor: 'var(--to)', opacity: 0.2 }} />
+              <div className="absolute bottom-0 left-1/3 h-80 w-80 rounded-full blur-3xl" style={{ backgroundColor: 'var(--solid)', opacity: 0.15 }} />
+            </div>
+            <div className="mx-auto max-w-3xl px-6">
+              <h1 className="site-heading text-5xl font-bold leading-[1.05] tracking-tight text-slate-900 sm:text-6xl">{b.heading}</h1>
+              {b.subheading && <p className="mx-auto mt-5 max-w-2xl text-lg text-slate-600">{b.subheading}</p>}
+              {b.label && <div className="mt-8"><Btn label={b.label} href={b.href} variant="gradient" /></div>}
+            </div>
+          </section>
+        )
+      }
+      if (v === 'screenshot') {
+        return (
+          <section className="overflow-hidden pt-24 text-center" style={tint}>
+            <div className="mx-auto max-w-3xl px-6">
+              <h1 className="site-heading text-4xl font-bold leading-tight text-slate-900 sm:text-6xl">{b.heading}</h1>
+              {b.subheading && <p className="mx-auto mt-5 max-w-2xl text-lg text-slate-600">{b.subheading}</p>}
+              {b.label && <div className="mt-8"><Btn label={b.label} href={b.href} variant="gradient" /></div>}
+            </div>
+            <div className="mx-auto mt-14 max-w-5xl px-6">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={b.url || `https://picsum.photos/seed/${b.id}/1400/800`} alt="" className="w-full rounded-t-2xl border-x border-t border-slate-200 shadow-2xl shadow-slate-900/20" />
+            </div>
+          </section>
+        )
+      }
+      if (v === 'stats') {
+        const items = (b.features || []).slice(0, 3)
+        return (
+          <section className="py-28 text-center">
+            <div className="mx-auto max-w-3xl px-6">
+              <h1 className="site-heading text-4xl font-bold leading-tight text-slate-900 sm:text-5xl">{b.heading}</h1>
+              {b.subheading && <p className="mx-auto mt-5 max-w-2xl text-lg text-slate-600">{b.subheading}</p>}
+              {b.label && <div className="mt-8"><Btn label={b.label} href={b.href} variant="gradient" /></div>}
+            </div>
+            {items.length > 0 && (
+              <div className="mx-auto mt-14 grid max-w-3xl grid-cols-1 gap-8 px-6 sm:grid-cols-3">
+                {items.map((f, i) => (<div key={i}><div className="bg-clip-text text-4xl font-bold text-transparent" style={gradient}>{f.title}</div><div className="mt-1 text-sm text-slate-500">{f.text}</div></div>))}
+              </div>
+            )}
+          </section>
+        )
+      }
+      if (v === 'newsletter') {
+        return (
+          <section className="py-28 text-center" style={tint}>
+            <div className="mx-auto max-w-2xl px-6">
+              <h1 className="site-heading text-4xl font-bold leading-tight text-slate-900 sm:text-5xl">{b.heading}</h1>
+              {b.subheading && <p className="mx-auto mt-4 max-w-xl text-lg text-slate-600">{b.subheading}</p>}
+              <div className="mx-auto mt-8 flex max-w-md gap-2">
+                <input type="email" placeholder="you@example.com" className="flex-1 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm" />
+                <Link href={b.href || '#'} className="rounded-full px-6 py-3 text-sm font-semibold text-white shadow-lg" style={gradient}>{b.label || 'Subscribe'}</Link>
+              </div>
+            </div>
+          </section>
+        )
+      }
+      if (v === 'bordered') {
+        return (
+          <section className="px-6 py-20">
+            <div className="mx-auto max-w-4xl rounded-3xl border-2 border-slate-900 p-12 text-center sm:p-16">
+              <h1 className="site-heading text-4xl font-bold leading-tight text-slate-900 sm:text-6xl">{b.heading}</h1>
+              {b.subheading && <p className="mx-auto mt-5 max-w-2xl text-lg text-slate-600">{b.subheading}</p>}
+              {b.label && <div className="mt-8"><Btn label={b.label} href={b.href} variant="solid" /></div>}
+            </div>
+          </section>
+        )
+      }
+      if (v === 'left') {
+        return (
+          <section className="px-6 py-28">
+            <div className="mx-auto max-w-5xl">
+              <h1 className="site-heading max-w-3xl text-5xl font-bold leading-[1.02] tracking-tight text-slate-900 sm:text-7xl">{b.heading}</h1>
+              {b.subheading && <p className="mt-6 max-w-xl text-xl text-slate-500">{b.subheading}</p>}
+              {b.label && <div className="mt-8"><Btn label={b.label} href={b.href} variant="gradient" /></div>}
+            </div>
+          </section>
+        )
+      }
+      if (v === 'bigtype') {
+        return (
+          <section className="px-6 py-28 text-center">
+            <div className="mx-auto max-w-5xl">
+              <h1 className="site-heading text-6xl font-extrabold leading-[0.95] tracking-tighter sm:text-8xl">
+                <span className="bg-clip-text text-transparent" style={gradient}>{b.heading}</span>
+              </h1>
+              {b.subheading && <p className="mx-auto mt-8 max-w-2xl text-xl text-slate-500">{b.subheading}</p>}
+              {b.label && <div className="mt-10"><Btn label={b.label} href={b.href} variant="gradient" /></div>}
+            </div>
+          </section>
+        )
+      }
+      if (v === 'angled') {
+        return (
+          <section className="relative overflow-hidden py-32 text-center text-white [clip-path:polygon(0_0,100%_0,100%_92%,0_100%)]" style={gradient}>
+            <div className="mx-auto max-w-3xl px-6">
+              <h1 className="site-heading text-4xl font-bold leading-tight sm:text-6xl">{b.heading}</h1>
+              {b.subheading && <p className="mx-auto mt-5 max-w-2xl text-lg text-white/85">{b.subheading}</p>}
+              {b.label && <div className="mt-8"><Link href={b.href || '#'} className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-slate-900 shadow-lg">{b.label} <ArrowRight className="h-4 w-4" /></Link></div>}
+            </div>
+          </section>
+        )
+      }
+      if (v === 'spotlight') {
+        return (
+          <section className="relative isolate overflow-hidden bg-ink-950 py-36 text-center text-white">
+            <div aria-hidden className="pointer-events-none absolute left-1/2 top-0 -z-10 h-[40rem] w-[40rem] -translate-x-1/2 rounded-full blur-3xl" style={{ backgroundImage: 'radial-gradient(circle, var(--from), transparent 60%)', opacity: 0.4 }} />
+            <div className="mx-auto max-w-3xl px-6">
+              <h1 className="site-heading text-4xl font-bold leading-[1.05] sm:text-6xl">{b.heading}</h1>
+              {b.subheading && <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-400">{b.subheading}</p>}
+              {b.label && <div className="mt-8"><Btn label={b.label} href={b.href} variant="gradient" /></div>}
+            </div>
+          </section>
+        )
+      }
+      if (v === 'waves') {
+        return (
+          <section className="relative overflow-hidden pb-24 pt-32 text-center text-white" style={gradient}>
+            <div className="mx-auto max-w-3xl px-6">
+              <h1 className="site-heading text-4xl font-bold leading-tight sm:text-6xl">{b.heading}</h1>
+              {b.subheading && <p className="mx-auto mt-5 max-w-2xl text-lg text-white/85">{b.subheading}</p>}
+              {b.label && <div className="mt-8"><Link href={b.href || '#'} className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-slate-900 shadow-lg">{b.label} <ArrowRight className="h-4 w-4" /></Link></div>}
+            </div>
+            <svg className="absolute inset-x-0 bottom-0 w-full" viewBox="0 0 1440 120" preserveAspectRatio="none" style={{ height: 60 }}><path fill="var(--brand-bg, #fff)" d="M0,64L60,58.7C120,53,240,43,360,48C480,53,600,75,720,80C840,85,960,75,1080,64C1200,53,1320,43,1380,37.3L1440,32L1440,120L0,120Z" /></svg>
+          </section>
+        )
+      }
       // gradient (default)
       return (
         <section className="relative isolate overflow-hidden bg-ink-950 py-32 text-center">

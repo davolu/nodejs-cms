@@ -67,6 +67,12 @@ export const WIDGETS: WidgetDef[] = [
   { type: 'collection_form', label: 'Collection Form', category: 'Forms', icon: 'FilePlus', kind: 'collection_form',
     defaults: { heading: 'Submit', collectionId: '', button: 'Submit', success: 'Thanks — submitted!' },
     fields: [txt('heading', 'Heading (optional)'), { key: 'collectionId', label: 'Collection', type: 'collection' }, txt('button', 'Button label'), txt('success', 'Success message')] },
+  { type: 'content_split', label: 'Content + Image', category: 'Content', icon: 'Columns', kind: 'content_split',
+    defaults: { heading: 'Built for teams', text: 'Explain a key benefit here with a sentence or two of supporting copy.', image: '', imageSide: 'right', label: '', href: '' },
+    fields: [txt('heading', 'Heading'), area('text', 'Text'), url('image', 'Image URL'), { key: 'imageSide', label: 'Image side', type: 'select', options: ['right', 'left'] }, txt('label', 'Button (optional)'), url('href', 'Button link')] },
+  { type: 'bento', label: 'Bento Grid', category: 'Layout', icon: 'LayoutGrid', kind: 'bento',
+    defaults: { heading: '', items: [{ title: 'Fast', text: 'Blazing performance out of the box.' }, { title: 'Secure', text: 'Best-practice security by default.' }, { title: 'Flexible', text: 'Adapt it to any workflow.' }, { title: 'Loved', text: 'Trusted by teams everywhere.' }] },
+    fields: [txt('heading', 'Heading (optional)'), { key: 'items', label: 'Cards', type: 'items', itemFields: [txt('title', 'Title'), area('text', 'Text')] }] },
 
   // ── Media ──
   { type: 'gallery', label: 'Gallery', category: 'Media', icon: 'Images', kind: 'gallery',
