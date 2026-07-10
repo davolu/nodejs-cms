@@ -6,7 +6,7 @@ import { Save, ArrowLeft, Eye, Sparkles, Loader2, LayoutGrid, List } from 'lucid
 import Link from 'next/link'
 import type { Page } from '@/lib/seed'
 import type { Block } from '@/lib/blocks'
-import { THEMES, THEME_NAMES } from '@/lib/blocks'
+import { THEME_NAMES } from '@/lib/blocks'
 import BlockEditor from '@/components/BlockEditor'
 import VisualEditor from '@/components/VisualEditor'
 
@@ -22,7 +22,7 @@ export default function PageForm({ initial }: Props) {
   const [error, setError] = useState('')
   const [slugTouched, setSlugTouched] = useState(editing)
   const [blocks, setBlocks] = useState<Block[]>(initial?.blocks ?? [])
-  const [theme, setTheme] = useState<string>(initial?.theme ?? 'indigo')
+  const [theme, setTheme] = useState<string>(initial?.theme ?? 'brand')
   const [access, setAccess] = useState<'public' | 'members' | 'subscribers' | 'managers' | 'admins'>(initial?.access ?? 'public')
   const [mode, setMode] = useState<'visual' | 'form'>('visual')
   const [form, setForm] = useState({
@@ -213,30 +213,6 @@ export default function PageForm({ initial }: Props) {
         </div>
 
         <div className="space-y-4">
-          <div className="card p-5">
-            <label className="label">Theme</label>
-            <p className="mb-3 text-xs text-slate-400">Sets the color palette for this page.</p>
-            <div className="grid grid-cols-4 gap-2">
-              {THEME_NAMES.map((name) => {
-                const t = THEMES[name] || { from: '#4f46e5', to: '#d946ef' }  // 'brand' has no preset; use default swatch
-                const active = theme === name
-                return (
-                  <button
-                    key={name}
-                    type="button"
-                    onClick={() => setTheme(name)}
-                    title={name}
-                    className={`group relative h-9 rounded-lg ring-offset-2 transition ${active ? 'ring-2 ring-slate-900' : 'ring-1 ring-slate-200 hover:ring-slate-300'}`}
-                    style={{ backgroundImage: `linear-gradient(120deg, ${t.from}, ${t.to})` }}
-                  >
-                    <span className="sr-only">{name}</span>
-                  </button>
-                )
-              })}
-            </div>
-            <p className="field-hint capitalize">Selected: {theme}</p>
-          </div>
-
           <div className="card p-5">
             <label className="label">Status</label>
             <select className="input" value={form.status} onChange={(e) => set('status', e.target.value)}>
