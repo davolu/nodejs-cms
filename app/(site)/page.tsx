@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import { pagesRepo, resolveHomePage, expandGlobals, usersRepo } from '@/lib/store'
 import { getMemberId, roleAtLeast } from '@/lib/members'
+import { getBrand } from '@/lib/brand'
 import BlockRenderer from '@/components/BlockRenderer'
 import MembersGate from '@/components/site/MembersGate'
 import RoleGate from '@/components/site/RoleGate'
@@ -12,6 +13,7 @@ export const dynamic = 'force-dynamic'
 
 export default async function Home() {
   const home = await resolveHomePage()
+  const brand = await getBrand()
 
   if (home && home.status === 'published') {
     const roleGated = home.access === 'managers' || home.access === 'admins'
@@ -23,7 +25,8 @@ export default async function Home() {
       if (roleGated && !roleAtLeast(member.role, home.access === 'admins' ? 'admin' : 'manager')) return <RoleGate title={home.title} theme={home.theme} required={home.access === 'admins' ? 'admin' : 'manager'} />
     }
     const blocks = await expandGlobals(home.blocks)
-    return <BlockRenderer blocks={blocks} theme={home.theme} />
+    const theme = brand.applyAll === false ? home.theme : 'brand'
+    return <BlockRenderer blocks={blocks} theme={theme} />
   }
 
   const pages = (await pagesRepo.list()).filter((p) => p.status === 'published' && p.id !== home?.id)

@@ -12,12 +12,13 @@ export interface Brand {
   bodyFont: string     // body face
   radius: number       // base corner radius (px)
   buttonStyle: 'rounded' | 'pill' | 'square'
+  applyAll?: boolean   // override per-page themes so the brand drives the whole site
 }
 
 export const DEFAULT_BRAND: Brand = {
   primary: '#4f46e5', accent: '#d946ef', bg: '#ffffff', surface: '#ffffff',
   text: '#334155', heading: '#0f172a', headingFont: 'Space Grotesk', bodyFont: 'Inter',
-  radius: 16, buttonStyle: 'pill',
+  radius: 16, buttonStyle: 'pill', applyAll: true,
 }
 
 // Curated font pairings the studio offers. Value = Google Fonts family name.
@@ -54,6 +55,6 @@ export function brandCss(b: Brand): string {
   --font-sans:${stack(b.bodyFont)};--font-display:${stack(b.headingFont)};
 }
 body{background:${b.bg};color:${b.text};font-family:var(--font-sans)}
-.site-heading{font-family:var(--font-display);color:${b.heading}}
+.site-heading{font-family:var(--font-display)}
 .brand-surface{background:${b.surface}}`
 }

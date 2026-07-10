@@ -7,7 +7,7 @@ import type { Setting } from '@/lib/seed'
 
 const HEADING_FONTS = ['Space Grotesk', 'Poppins', 'Sora', 'Outfit', 'Manrope', 'Montserrat', 'Playfair Display', 'Fraunces', 'DM Serif Display', 'Bricolage Grotesque', 'Instrument Serif', 'Inter']
 const BODY_FONTS = ['Inter', 'Manrope', 'DM Sans', 'Work Sans', 'Source Sans 3', 'Nunito Sans', 'Figtree', 'Roboto', 'System']
-const DEFAULT = { primary: '#4f46e5', accent: '#d946ef', bg: '#ffffff', surface: '#ffffff', text: '#334155', heading: '#0f172a', headingFont: 'Space Grotesk', bodyFont: 'Inter', radius: 16, buttonStyle: 'pill' as const }
+const DEFAULT = { primary: '#4f46e5', accent: '#d946ef', bg: '#ffffff', surface: '#ffffff', text: '#334155', heading: '#0f172a', headingFont: 'Space Grotesk', bodyFont: 'Inter', radius: 16, buttonStyle: 'pill' as const, applyAll: true }
 
 const COLORS: { key: keyof typeof DEFAULT; label: string }[] = [
   { key: 'primary', label: 'Primary' }, { key: 'accent', label: 'Accent' }, { key: 'bg', label: 'Background' },
@@ -101,6 +101,10 @@ export default function BrandStudio() {
                 ))}
               </div>
             </div>
+            <label className="flex cursor-pointer items-center gap-2 border-t border-slate-100 pt-3 text-sm text-slate-600">
+              <input type="checkbox" checked={b.applyAll !== false} onChange={(e) => set('applyAll', e.target.checked)} />
+              Apply brand to all pages <span className="text-xs text-slate-400">(override individual page themes)</span>
+            </label>
           </div>
         </div>
 

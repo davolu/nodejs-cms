@@ -5,6 +5,7 @@ import { getSiteMeta } from '@/lib/site-meta'
 import { isAuthed } from '@/lib/auth'
 import { getMemberId } from '@/lib/members'
 import { roleAtLeast } from '@/lib/members'
+import { getBrand } from '@/lib/brand'
 import BlockRenderer from '@/components/BlockRenderer'
 import PreviewBanner from '@/components/PreviewBanner'
 import MembersGate from '@/components/site/MembersGate'
@@ -45,6 +46,7 @@ export default async function PublicPage({
 
   const memberId = getMemberId()
   const member = memberId ? await usersRepo.findById(memberId) : null
+  const brand = await getBrand()
   const roleGated = page.access === 'managers' || page.access === 'admins'
   const needsLogin = (page.access === 'members' || page.access === 'subscribers' || roleGated) && !member && !isPreview
   const needsSubscription = page.access === 'subscribers' && member && !member.subscribed && !isPreview
@@ -74,7 +76,7 @@ export default async function PublicPage({
               </div>
             </section>
           )}
-          <BlockRenderer blocks={blocks} theme={page.theme} />
+          <BlockRenderer blocks={blocks} theme={brand.applyAll === false ? page.theme : 'brand'} />
         </>
       )}
     </>

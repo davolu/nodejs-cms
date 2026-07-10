@@ -69,7 +69,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
           <div className="flex flex-col justify-between gap-8 sm:flex-row">
             <div className="max-w-sm">
               <div className="flex items-center gap-2.5">
-                <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-brand-600 to-accent-500 text-sm font-bold text-white">
+                <span className="grid h-9 w-9 place-items-center rounded-xl text-sm font-bold text-white" style={{ backgroundImage: 'linear-gradient(120deg, var(--brand-from), var(--brand-to))' }}>
                   {initial}
                 </span>
                 <span className="site-heading text-lg font-bold tracking-tight">{siteTitle}</span>
