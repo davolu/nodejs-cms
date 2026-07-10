@@ -11,9 +11,36 @@ export type BlockType = CoreBlockType | (string & {})
 export interface FeatureItem { title: string; text: string }
 export interface StatItem { value: string; label: string }
 
+// Per-block visual overrides (set via the block's Customize panel).
+export interface BlockStyle { bg?: string; text?: string; accent?: string; font?: string }
+
+export const BLOCK_FONTS = ['Space Grotesk', 'Poppins', 'Sora', 'Outfit', 'Manrope', 'Montserrat', 'Playfair Display', 'Fraunces', 'DM Serif Display', 'Inter', 'DM Sans', 'Work Sans', 'System']
+const BLOCK_SERIF = new Set(['Playfair Display', 'Fraunces', 'DM Serif Display'])
+export function fontStack(font?: string): string {
+  if (!font || font === 'System') return 'system-ui, -apple-system, sans-serif'
+  return `'${font}', ${BLOCK_SERIF.has(font) ? 'Georgia, serif' : 'system-ui, sans-serif'}`
+}
+export function blockFontsHref(blocks: { style?: BlockStyle }[]): string {
+  const fams = Array.from(new Set(blocks.map((b) => b.style?.font).filter((f): f is string => !!f && f !== 'System')))
+  if (!fams.length) return ''
+  return `https://fonts.googleapis.com/css2?${fams.map((f) => `family=${encodeURIComponent(f)}:wght@400;500;600;700`).join('&')}&display=swap`
+}
+
+// CSS variables/props for a block's style overrides. Reuses the same vars the brand/theme use.
+export function blockStyleVars(style?: BlockStyle): Record<string, string> {
+  const v: Record<string, string> = {}
+  if (!style) return v
+  if (style.accent) { v['--from'] = style.accent; v['--to'] = style.accent; v['--solid'] = style.accent; v['--tint'] = style.accent + '22' }
+  if (style.font) { const s = fontStack(style.font); v['--font-sans'] = s; v['--font-display'] = s }
+  if (style.text) v['color'] = style.text
+  if (style.bg) v['background'] = style.bg
+  return v
+}
+
 export interface Block {
   id: string
   type: BlockType
+  style?: BlockStyle
   // text-bearing
   text?: string
   heading?: string

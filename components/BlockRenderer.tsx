@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { ArrowRight, Check } from 'lucide-react'
 import type { Block } from '@/lib/blocks'
-import { themeVars } from '@/lib/blocks'
+import { themeVars, blockStyleVars, blockFontsHref } from '@/lib/blocks'
 import { isWidget } from '@/lib/widgets'
 import WidgetRenderer from '@/components/widgets/WidgetRenderer'
 import Reveal from '@/components/site/Reveal'
@@ -11,10 +11,14 @@ export default function BlockRenderer({ blocks, theme }: { blocks: Block[]; them
   if (!blocks?.length) {
     return <div className="mx-auto max-w-3xl px-6 py-20 text-center text-slate-400">This page has no content yet.</div>
   }
+  const fontsHref = blockFontsHref(blocks)
   return (
     <div className="pb-24" style={themeVars(theme) as React.CSSProperties}>
+      {fontsHref && <link rel="stylesheet" href={fontsHref} />}
       {blocks.map((b) => (
-        <BlockView key={b.id} block={b} />
+        b.style && Object.keys(b.style).length
+          ? <div key={b.id} style={blockStyleVars(b.style) as React.CSSProperties}><BlockView block={b} /></div>
+          : <BlockView key={b.id} block={b} />
       ))}
     </div>
   )

@@ -14,7 +14,7 @@ import {
   GripVertical, Trash2, Plus, Copy, ChevronUp, ChevronDown, Maximize2, Minimize2,
   Eye, Save, Sliders, Check, X, Search, LayoutTemplate,
 } from 'lucide-react'
-import { Block, BlockType, makeBlock, blockId, labelFor, variantsFor, themeVars } from '@/lib/blocks'
+import { Block, BlockType, makeBlock, blockId, labelFor, variantsFor, themeVars, BLOCK_FONTS } from '@/lib/blocks'
 import { isWidget } from '@/lib/widgets'
 import WidgetRenderer from '@/components/widgets/WidgetRenderer'
 import WidgetFields from '@/components/widgets/WidgetFields'
@@ -434,6 +434,7 @@ function SettingsPanel({ block: b, onUpdate, onClose }: { block: Block; onUpdate
           <button onClick={onClose} className="rounded p-1 text-slate-400 hover:bg-slate-200"><X className="h-4 w-4" /></button>
         </div>
         <WidgetFields block={b} onUpdate={onUpdate} />
+        <BlockCustomize b={b} set={set} />
       </div>
     )
   }
@@ -500,6 +501,40 @@ function SettingsPanel({ block: b, onUpdate, onClose }: { block: Block; onUpdate
           </div>
         </div>
       )}
+      <BlockCustomize b={b} set={set} />
+    </div>
+  )
+}
+
+// Per-block visual overrides — colors and font that apply to just this block.
+function BlockCustomize({ b, set }: { b: Block; set: (patch: Partial<Block>) => void }) {
+  const s = b.style || {}
+  const upd = (k: string, v?: string) => { const ns: any = { ...s }; if (v) ns[k] = v; else delete ns[k]; set({ style: ns }) }
+  const Swatch = ({ label, k }: { label: string; k: 'bg' | 'text' | 'accent' }) => (
+    <div>
+      <div className="mb-1 text-xs font-medium text-slate-500">{label}</div>
+      <div className="flex items-center gap-1.5">
+        <input type="color" value={(s as any)[k] || '#3b82f6'} onChange={(e) => upd(k, e.target.value)} className="h-8 w-8 cursor-pointer rounded border border-slate-200" />
+        {(s as any)[k] ? <button onClick={() => upd(k)} className="text-[11px] text-slate-400 hover:text-slate-700">Clear</button> : <span className="text-[11px] text-slate-300">Brand</span>}
+      </div>
+    </div>
+  )
+  return (
+    <div className="space-y-2.5 border-t border-slate-200 pt-3">
+      <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">Customize this block</div>
+      <div className="grid grid-cols-3 gap-2">
+        <Swatch label="Background" k="bg" />
+        <Swatch label="Text" k="text" />
+        <Swatch label="Accent" k="accent" />
+      </div>
+      <div>
+        <div className="mb-1 text-xs font-medium text-slate-500">Font</div>
+        <select value={s.font || ''} onChange={(e) => upd('font', e.target.value || undefined)} className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs">
+          <option value="">Brand default</option>
+          {BLOCK_FONTS.map((f) => <option key={f} value={f}>{f}</option>)}
+        </select>
+      </div>
+      {Object.keys(s).length > 0 && <button onClick={() => set({ style: {} })} className="text-[11px] font-medium text-slate-400 hover:text-slate-700">Reset customizations</button>}
     </div>
   )
 }
