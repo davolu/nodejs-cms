@@ -85,6 +85,15 @@ export const WIDGETS: WidgetDef[] = [
   { type: 'breadcrumb', label: 'Breadcrumb', category: 'Layout', icon: 'ChevronRight', kind: 'breadcrumb',
     defaults: { items: [{ label: 'Home', href: '/' }, { label: 'Docs', href: '/docs' }, { label: 'Getting started', href: '' }] },
     fields: [{ key: 'items', label: 'Trail', type: 'items', itemFields: [txt('label', 'Label'), url('href', 'Link (optional)')] }] },
+  { type: 'badges', label: 'Badges / Tags', category: 'Layout', icon: 'Tags', kind: 'badges',
+    defaults: { heading: '', items: [{ text: 'New' }, { text: 'Popular' }, { text: 'Beta' }] },
+    fields: [txt('heading', 'Heading (optional)'), { key: 'items', label: 'Badges', type: 'items', itemFields: [txt('text', 'Label')] }] },
+  { type: 'accordion', label: 'Accordion', category: 'Content', icon: 'ChevronDown', kind: 'accordion',
+    defaults: { heading: '', items: [{ title: 'Section one', text: 'Hidden content that expands in place.' }, { title: 'Section two', text: 'Great for compressing long content.' }] },
+    fields: [txt('heading', 'Heading (optional)'), { key: 'items', label: 'Sections', type: 'items', itemFields: [txt('title', 'Title'), area('text', 'Content')] }] },
+  { type: 'popup', label: 'Popup / Modal', category: 'Marketing', icon: 'SquareArrowOutUpRight', kind: 'popup',
+    defaults: { heading: 'Join our newsletter', text: 'Get the latest updates in your inbox.', label: 'Subscribe', href: '#', delay: '2', trigger: 'load' },
+    fields: [txt('heading', 'Heading'), area('text', 'Text'), txt('label', 'Button label'), url('href', 'Button link'), { key: 'trigger', label: 'Show on', type: 'select', options: ['load', 'button'] }, { key: 'delay', label: 'Delay (seconds, for load)', type: 'number' }] },
 
   // ── Media ──
   { type: 'gallery', label: 'Gallery', category: 'Media', icon: 'Images', kind: 'gallery',
@@ -141,7 +150,7 @@ export const WIDGETS: WidgetDef[] = [
     },
     fields: [
       txt('heading', 'Heading'), txt('formName', 'Form name (shown in admin)'), txt('label', 'Button label'), txt('success', 'Success message'),
-      { key: 'fields', label: 'Form fields', type: 'items', itemFields: [txt('label', 'Field label'), { key: 'type', label: 'Type', type: 'select', options: ['text', 'email', 'tel', 'number', 'textarea'] }] },
+      { key: 'fields', label: 'Form fields', type: 'items', itemFields: [txt('label', 'Field label'), { key: 'type', label: 'Type', type: 'select', options: ['text', 'email', 'tel', 'number', 'textarea', 'date', 'select', 'radio', 'checkbox'] }, txt('choices', 'Choices for select/radio (comma-separated)')] },
     ] },
 
   // ── Interactive ──

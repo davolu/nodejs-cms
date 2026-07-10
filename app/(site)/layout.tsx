@@ -5,6 +5,7 @@ import { CartProvider } from '@/components/shop/CartProvider'
 import CartButton from '@/components/shop/CartButton'
 import RawScripts from '@/components/site/RawScripts'
 import JsonLd from '@/components/site/JsonLd'
+import BackToTop from '@/components/site/BackToTop'
 import { getBrand, brandCss, brandFontsHref } from '@/lib/brand'
 
 export const dynamic = 'force-dynamic'
@@ -94,6 +95,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       <CartButton />
       <RawScripts html={meta.bodyScripts} target="body" />
     </div>
+    <BackToTop />
     </CartProvider>
   )
 }

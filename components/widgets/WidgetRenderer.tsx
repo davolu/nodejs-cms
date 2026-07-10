@@ -256,6 +256,12 @@ export default function WidgetRenderer({ block }: { block: Block }) {
       return <Comparison p={p} />
     case 'breadcrumb':
       return <Breadcrumb p={p} />
+    case 'badges':
+      return <Badges p={p} />
+    case 'accordion':
+      return <Accordion p={p} />
+    case 'popup':
+      return <Popup p={p} />
     case 'plans':
       return <PlansWidget p={p} />
     case 'app_youtube':
@@ -393,7 +399,7 @@ function Newsletter({ p }: { p: any }) {
 }
 
 function FormWidget({ p }: { p: any }) {
-  const fields: { label: string; type: string }[] = p.fields || []
+  const fields: { label: string; type: string; choices?: string }[] = p.fields || []
   const [values, setValues] = useState<Record<string, string>>({})
   const [gotcha, setGotcha] = useState('')
   const [status, setStatus] = useState<'idle' | 'sending' | 'done' | 'error'>('idle')
@@ -421,14 +427,28 @@ function FormWidget({ p }: { p: any }) {
         ) : (
           <form onSubmit={submit} className="space-y-4">
             <input type="text" tabIndex={-1} autoComplete="off" value={gotcha} onChange={(e) => setGotcha(e.target.value)} className="hidden" aria-hidden />
-            {fields.map((f, i) => (
+            {fields.map((f, i) => {
+              const choices = String(f.choices || '').split(',').map((c: string) => c.trim()).filter(Boolean)
+              return (
               <div key={i}>
-                <label className="mb-1.5 block text-sm font-medium text-slate-700">{f.label}</label>
-                {f.type === 'textarea'
-                  ? <textarea required value={values[f.label] || ''} onChange={(e) => set(f.label, e.target.value)} className="min-h-[110px] w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none" />
-                  : <input type={f.type || 'text'} required value={values[f.label] || ''} onChange={(e) => set(f.label, e.target.value)} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none" />}
+                {f.type !== 'checkbox' && <label className="mb-1.5 block text-sm font-medium text-slate-700">{f.label}</label>}
+                {f.type === 'textarea' ? (
+                  <textarea required value={values[f.label] || ''} onChange={(e) => set(f.label, e.target.value)} className="min-h-[110px] w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none" />
+                ) : f.type === 'select' ? (
+                  <select required value={values[f.label] || ''} onChange={(e) => set(f.label, e.target.value)} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                    <option value="">Choose…</option>{choices.map((c: string) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                ) : f.type === 'radio' ? (
+                  <div className="flex flex-wrap gap-3 pt-1">{choices.map((c: string) => (
+                    <label key={c} className="flex items-center gap-1.5 text-sm text-slate-600"><input type="radio" name={`f${i}`} checked={values[f.label] === c} onChange={() => set(f.label, c)} /> {c}</label>
+                  ))}</div>
+                ) : f.type === 'checkbox' ? (
+                  <label className="flex items-center gap-2 text-sm text-slate-600"><input type="checkbox" checked={values[f.label] === 'Yes'} onChange={(e) => set(f.label, e.target.checked ? 'Yes' : '')} /> {f.label}</label>
+                ) : (
+                  <input type={f.type === 'date' ? 'date' : f.type || 'text'} required value={values[f.label] || ''} onChange={(e) => set(f.label, e.target.value)} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none" />
+                )}
               </div>
-            ))}
+            )})}
             {status === 'error' && <p className="text-sm text-red-600">Something went wrong. Please try again.</p>}
             <button disabled={status === 'sending'} className="w-full rounded-full py-3 text-sm font-semibold text-white disabled:opacity-60" style={grad}>
               {status === 'sending' ? 'Sending…' : (p.label || 'Submit')}
@@ -834,6 +854,71 @@ function Comparison({ p }: { p: any }) {
         </div>
       </div>
     </section>
+  )
+}
+
+function Badges({ p }: { p: any }) {
+  const items = p.items || []
+  return (
+    <section className="px-6 py-8 text-center">
+      {p.heading && <h2 className="site-heading mb-4 text-xl font-bold text-slate-900">{p.heading}</h2>}
+      <div className="flex flex-wrap justify-center gap-2">
+        {items.map((it: any, i: number) => (
+          <span key={i} className="rounded-full px-3 py-1 text-xs font-semibold text-white" style={grad}>{it.text}</span>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function Accordion({ p }: { p: any }) {
+  const items = p.items || []
+  const [open, setOpen] = useState<number | null>(0)
+  return (
+    <section className="px-6 py-12">
+      <div className="mx-auto max-w-2xl">
+        {p.heading && <h2 className="site-heading mb-6 text-center text-3xl font-bold text-slate-900">{p.heading}</h2>}
+        <div className="divide-y divide-slate-200 rounded-2xl border border-slate-200">
+          {items.map((it: any, i: number) => (
+            <div key={i}>
+              <button onClick={() => setOpen(open === i ? null : i)} className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left">
+                <span className="font-semibold text-slate-800">{it.title}</span>
+                <ChevronDown className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${open === i ? 'rotate-180' : ''}`} />
+              </button>
+              {open === i && <div className="px-5 pb-4 text-sm leading-relaxed text-slate-600">{it.text}</div>}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function Popup({ p }: { p: any }) {
+  const [show, setShow] = useState(false)
+  useEffect(() => {
+    if (p.trigger === 'button') return
+    const key = `popup_${(p.heading || '').slice(0, 20)}`
+    try { if (sessionStorage.getItem(key)) return } catch {}
+    const t = setTimeout(() => { setShow(true); try { sessionStorage.setItem(key, '1') } catch {} }, (Number(p.delay) || 2) * 1000)
+    return () => clearTimeout(t)
+  }, [p.trigger, p.delay, p.heading])
+  return (
+    <>
+      {p.trigger === 'button' && (
+        <div className="px-6 py-6 text-center"><button onClick={() => setShow(true)} className="rounded-full px-6 py-3 text-sm font-semibold text-white" style={grad}>{p.heading || 'Open'}</button></div>
+      )}
+      {show && (
+        <div className="fixed inset-0 z-[100] grid place-items-center bg-black/50 p-4" onClick={() => setShow(false)}>
+          <div className="relative w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setShow(false)} className="absolute right-3 top-3 text-slate-400 hover:text-slate-700">✕</button>
+            <h3 className="site-heading text-2xl font-bold text-slate-900">{p.heading}</h3>
+            {p.text && <p className="mt-2 text-slate-600">{p.text}</p>}
+            {p.label && <a href={p.href || '#'} className="mt-5 inline-flex rounded-full px-6 py-3 text-sm font-semibold text-white" style={grad}>{p.label}</a>}
+          </div>
+        </div>
+      )}
+    </>
   )
 }
 
