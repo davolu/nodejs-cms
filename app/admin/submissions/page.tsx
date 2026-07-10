@@ -9,19 +9,34 @@ interface Submission { id: string; form: string; data: Record<string, string>; p
 export default function SubmissionsPage() {
   const [items, setItems] = useState<Submission[]>([])
   const [loading, setLoading] = useState(true)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [deleting, setDeleting] = useState(false)
 
   async function load() {
     setLoading(true)
     const res = await fetch('/api/submissions', { cache: 'no-store' })
     setItems(res.ok ? await res.json() : [])
+    setSelected(new Set())
     setLoading(false)
   }
   useEffect(() => { load() }, [])
+
+  const toggle = (id: string) => setSelected((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n })
+  const allSelected = items.length > 0 && selected.size === items.length
 
   async function remove(id: string) {
     if (!confirm('Delete this submission?')) return
     await fetch(`/api/submissions/${id}`, { method: 'DELETE' })
     setItems((x) => x.filter((s) => s.id !== id))
+    setSelected((s) => { const n = new Set(s); n.delete(id); return n })
+  }
+
+  async function bulkDelete() {
+    const ids = [...selected]
+    if (!ids.length || !confirm(`Delete ${ids.length} submission${ids.length === 1 ? '' : 's'}?`)) return
+    setDeleting(true)
+    await Promise.all(ids.map((id) => fetch(`/api/submissions/${id}`, { method: 'DELETE' })))
+    setItems((x) => x.filter((s) => !selected.has(s.id))); setSelected(new Set()); setDeleting(false)
   }
 
   return (
@@ -37,10 +52,22 @@ export default function SubmissionsPage() {
         />
       ) : (
         <div className="space-y-3">
+          {selected.size > 0 && (
+            <div className="flex items-center justify-between rounded-xl border border-brand-200 bg-brand-50/60 px-4 py-2.5 text-sm">
+              <label className="flex items-center gap-2 font-medium text-brand-700">
+                <input type="checkbox" checked={allSelected} onChange={() => setSelected(allSelected ? new Set() : new Set(items.map((s) => s.id)))} /> {selected.size} selected
+              </label>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setSelected(new Set())} className="text-slate-500 hover:text-slate-700">Clear</button>
+                <button onClick={bulkDelete} disabled={deleting} className="btn-danger !py-1.5"><Trash2 className="h-4 w-4" /> {deleting ? 'Deleting…' : 'Delete selected'}</button>
+              </div>
+            </div>
+          )}
           {items.map((s) => (
-            <div key={s.id} className="card p-5">
+            <div key={s.id} className={`card p-5 ${selected.has(s.id) ? 'ring-1 ring-brand-300' : ''}`}>
               <div className="mb-3 flex items-start justify-between gap-4">
                 <div className="flex items-center gap-2">
+                  <input type="checkbox" checked={selected.has(s.id)} onChange={() => toggle(s.id)} aria-label="Select submission" className="cursor-pointer" />
                   <span className="grid h-8 w-8 place-items-center rounded-lg bg-brand-50 text-brand-600"><Mail className="h-4 w-4" /></span>
                   <div>
                     <div className="text-sm font-semibold text-slate-800">{s.form}</div>

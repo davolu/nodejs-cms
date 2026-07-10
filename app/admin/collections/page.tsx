@@ -18,6 +18,8 @@ export default function CollectionsPage() {
   const [name, setName] = useState('')
   const [ownership, setOwnership] = useState<'shared' | 'own'>('shared')
   const [fields, setFields] = useState<Field[]>([])
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [deleting, setDeleting] = useState(false)
 
   async function load() { const r = await fetch('/api/collections', { cache: 'no-store' }); setItems(r.ok ? await r.json() : []); setLoading(false) }
   useEffect(() => { load() }, [])
@@ -31,7 +33,16 @@ export default function CollectionsPage() {
     else await fetch('/api/collections', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
     setOpen(false); load()
   }
-  async function remove(id: string) { if (!confirm('Delete this collection and all its entries?')) return; await fetch(`/api/collections/${id}`, { method: 'DELETE' }); setItems((x) => x.filter((c) => c.id !== id)) }
+  async function remove(id: string) { if (!confirm('Delete this collection and all its entries?')) return; await fetch(`/api/collections/${id}`, { method: 'DELETE' }); setItems((x) => x.filter((c) => c.id !== id)); setSelected((s) => { const n = new Set(s); n.delete(id); return n }) }
+  const toggle = (id: string) => setSelected((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n })
+  const allSelected = items.length > 0 && selected.size === items.length
+  async function bulkDelete() {
+    const ids = [...selected]
+    if (!ids.length || !confirm(`Delete ${ids.length} collection${ids.length === 1 ? '' : 's'} and all their entries? This cannot be undone.`)) return
+    setDeleting(true)
+    await Promise.all(ids.map((id) => fetch(`/api/collections/${id}`, { method: 'DELETE' })))
+    setItems((x) => x.filter((c) => !selected.has(c.id))); setSelected(new Set()); setDeleting(false)
+  }
 
   const setField = (i: number, patch: Partial<Field>) => setFields(fields.map((f, j) => (j === i ? { ...f, ...patch } : f)))
   const moveField = (i: number, d: number) => { const j = i + d; if (j < 0 || j >= fields.length) return; const n = [...fields];[n[i], n[j]] = [n[j], n[i]]; setFields(n) }
@@ -45,9 +56,21 @@ export default function CollectionsPage() {
         : items.length === 0 ? <EmptyState title="No collections yet" hint="Create a content type, add entries, then show them with the Collection widget." />
         : (
           <div className="space-y-2">
+            {selected.size > 0 && (
+              <div className="flex items-center justify-between rounded-xl border border-brand-200 bg-brand-50/60 px-4 py-2.5 text-sm">
+                <label className="flex items-center gap-2 font-medium text-brand-700">
+                  <input type="checkbox" checked={allSelected} onChange={() => setSelected(allSelected ? new Set() : new Set(items.map((c) => c.id)))} /> {selected.size} selected
+                </label>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => setSelected(new Set())} className="text-slate-500 hover:text-slate-700">Clear</button>
+                  <button onClick={bulkDelete} disabled={deleting} className="btn-danger !py-1.5"><Trash2 className="h-4 w-4" /> {deleting ? 'Deleting…' : 'Delete selected'}</button>
+                </div>
+              </div>
+            )}
             {items.map((c) => (
-              <div key={c.id} className="card flex items-center justify-between p-4">
+              <div key={c.id} className={`card flex items-center justify-between p-4 ${selected.has(c.id) ? 'ring-1 ring-brand-300' : ''}`}>
                 <div className="flex items-center gap-3">
+                  <input type="checkbox" checked={selected.has(c.id)} onChange={() => toggle(c.id)} aria-label={`Select ${c.name}`} className="cursor-pointer" />
                   <span className="grid h-9 w-9 place-items-center rounded-lg bg-brand-50 text-brand-600"><Database className="h-4 w-4" /></span>
                   <div>
                     <div className="font-medium text-slate-800">{c.name}</div>

@@ -10,6 +10,8 @@ export default function PagesListPage() {
   const [pages, setPages] = useState<Page[]>([])
   const [homeId, setHomeId] = useState<string>('')
   const [loading, setLoading] = useState(true)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [deleting, setDeleting] = useState(false)
 
   async function load() {
     setLoading(true)
@@ -19,14 +21,29 @@ export default function PagesListPage() {
     ])
     setPages(p)
     setHomeId((s.find((x: any) => x.key === 'home_page_id')?.value) || '')
+    setSelected(new Set())
     setLoading(false)
   }
   useEffect(() => { load() }, [])
+
+  const toggle = (id: string) => setSelected((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n })
+  const allSelected = pages.length > 0 && selected.size === pages.length
+  const toggleAll = () => setSelected(allSelected ? new Set() : new Set(pages.map((p) => p.id)))
 
   async function remove(id: string) {
     if (!confirm('Delete this page? This cannot be undone.')) return
     await fetch(`/api/pages/${id}`, { method: 'DELETE' })
     setPages((p) => p.filter((x) => x.id !== id))
+    setSelected((s) => { const n = new Set(s); n.delete(id); return n })
+  }
+
+  async function bulkDelete() {
+    const ids = [...selected]
+    if (!ids.length || !confirm(`Delete ${ids.length} page${ids.length === 1 ? '' : 's'}? This cannot be undone.`)) return
+    setDeleting(true)
+    await Promise.all(ids.map((id) => fetch(`/api/pages/${id}`, { method: 'DELETE' })))
+    setPages((p) => p.filter((x) => !selected.has(x.id)))
+    setSelected(new Set()); setDeleting(false)
   }
 
   async function setHome(page: Page) {
@@ -56,9 +73,19 @@ export default function PagesListPage() {
         />
       ) : (
         <div className="card overflow-hidden">
+          {selected.size > 0 && (
+            <div className="flex items-center justify-between border-b border-slate-100 bg-brand-50/60 px-5 py-2.5 text-sm">
+              <span className="font-medium text-brand-700">{selected.size} selected</span>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setSelected(new Set())} className="text-slate-500 hover:text-slate-700">Clear</button>
+                <button onClick={bulkDelete} disabled={deleting} className="btn-danger !py-1.5"><Trash2 className="h-4 w-4" /> {deleting ? 'Deleting…' : 'Delete selected'}</button>
+              </div>
+            </div>
+          )}
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-400">
+                <th className="w-10 px-5 py-3"><input type="checkbox" checked={allSelected} onChange={toggleAll} aria-label="Select all" className="cursor-pointer" /></th>
                 <th className="px-5 py-3 font-medium">Title</th>
                 <th className="hidden px-5 py-3 font-medium sm:table-cell">Slug</th>
                 <th className="px-5 py-3 font-medium">Status</th>
@@ -70,7 +97,8 @@ export default function PagesListPage() {
               {pages.map((p) => {
                 const isHome = p.id === homeId
                 return (
-                  <tr key={p.id} className="hover:bg-slate-50">
+                  <tr key={p.id} className={selected.has(p.id) ? 'bg-brand-50/40' : 'hover:bg-slate-50'}>
+                    <td className="px-5 py-3"><input type="checkbox" checked={selected.has(p.id)} onChange={() => toggle(p.id)} aria-label={`Select ${p.title}`} className="cursor-pointer" /></td>
                     <td className="px-5 py-3">
                       <Link href={`/admin/pages/${p.id}/edit`} className="inline-flex items-center gap-2 font-medium text-slate-800 hover:text-brand-700">
                         {p.title}
