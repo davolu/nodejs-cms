@@ -258,6 +258,10 @@ export default function WidgetRenderer({ block }: { block: Block }) {
       return <Breadcrumb p={p} />
     case 'badges':
       return <Badges p={p} />
+    case 'megamenu':
+      return <MegaMenu p={p} />
+    case 'sidebar_menu':
+      return <SidebarMenu p={p} />
     case 'accordion':
       return <Accordion p={p} />
     case 'popup':
@@ -854,6 +858,70 @@ function Comparison({ p }: { p: any }) {
         </div>
       </div>
     </section>
+  )
+}
+
+function parseLinks(text?: string): { label: string; href: string }[] {
+  return String(text || '').split('\n').map((l) => l.trim()).filter(Boolean).map((l) => {
+    const [label, href] = l.split('|'); return { label: (label || '').trim(), href: (href || '#').trim() }
+  })
+}
+
+function MegaMenu({ p }: { p: any }) {
+  const items = p.items || []
+  const [open, setOpen] = useState<number | null>(null)
+  return (
+    <nav className="relative z-40 border-b border-slate-200 bg-white/90 backdrop-blur" onMouseLeave={() => setOpen(null)}>
+      <div className="mx-auto flex max-w-6xl items-center gap-2 px-6 py-3">
+        <span className="site-heading mr-4 text-lg font-bold text-slate-900">{p.brand || 'Brand'}</span>
+        <div className="hidden items-center gap-1 md:flex">
+          {items.map((it: any, i: number) => {
+            const links = parseLinks(it.children)
+            const hasPanel = links.length > 0
+            return (
+              <div key={i} className="static" onMouseEnter={() => setOpen(hasPanel ? i : null)}>
+                <a href={hasPanel ? undefined : (it.href || '#')} className="flex cursor-pointer items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900">
+                  {it.label}{hasPanel && <ChevronDown className="h-3.5 w-3.5" />}
+                </a>
+              </div>
+            )
+          })}
+        </div>
+        <div className="ml-auto">{p.cta && <a href={p.ctaHref || '#'} className="rounded-full px-4 py-2 text-sm font-semibold text-white" style={grad}>{p.cta}</a>}</div>
+      </div>
+      {open !== null && parseLinks(items[open]?.children).length > 0 && (
+        <div className="absolute inset-x-0 top-full border-b border-slate-200 bg-white shadow-xl" onMouseEnter={() => setOpen(open)}>
+          <div className="mx-auto grid max-w-6xl gap-2 px-6 py-6 sm:grid-cols-2 lg:grid-cols-4">
+            {parseLinks(items[open].children).map((l, j) => (
+              <a key={j} href={l.href} className="rounded-xl p-3 text-sm font-medium text-slate-700 hover:bg-slate-50">{l.label}</a>
+            ))}
+          </div>
+        </div>
+      )}
+    </nav>
+  )
+}
+
+function SidebarMenu({ p }: { p: any }) {
+  const items = p.items || []
+  const groups: Record<string, any[]> = {}
+  for (const it of items) { const s = it.section || ''; (groups[s] = groups[s] || []).push(it) }
+  return (
+    <aside className="px-6 py-8">
+      <nav className="mx-auto max-w-xs space-y-6">
+        {p.heading && <div className="site-heading text-lg font-bold text-slate-900">{p.heading}</div>}
+        {Object.entries(groups).map(([section, links], gi) => (
+          <div key={gi}>
+            {section && <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">{section}</div>}
+            <ul className="space-y-0.5 border-l border-slate-200">
+              {links.map((l: any, i: number) => (
+                <li key={i}><a href={l.href || '#'} className="-ml-px block border-l-2 border-transparent py-1.5 pl-4 text-sm text-slate-600 hover:border-current hover:text-slate-900" style={{ color: undefined }}>{l.label}</a></li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </nav>
+    </aside>
   )
 }
 

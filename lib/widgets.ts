@@ -88,6 +88,17 @@ export const WIDGETS: WidgetDef[] = [
   { type: 'badges', label: 'Badges / Tags', category: 'Layout', icon: 'Tags', kind: 'badges',
     defaults: { heading: '', items: [{ text: 'New' }, { text: 'Popular' }, { text: 'Beta' }] },
     fields: [txt('heading', 'Heading (optional)'), { key: 'items', label: 'Badges', type: 'items', itemFields: [txt('text', 'Label')] }] },
+  { type: 'megamenu', label: 'Mega Menu', category: 'Layout', icon: 'PanelsTopLeft', kind: 'megamenu',
+    defaults: { brand: 'Brand', cta: 'Get started', ctaHref: '#', items: [
+      { label: 'Products', children: 'Analytics | /analytics\nAutomation | /automation\nIntegrations | /integrations' },
+      { label: 'Solutions', children: 'For startups | /startups\nFor teams | /teams\nEnterprise | /enterprise' },
+      { label: 'Pricing', href: '/pricing' }, { label: 'Blog', href: '/blog' }] },
+    fields: [txt('brand', 'Brand text'), { key: 'items', label: 'Menu items', type: 'items', itemFields: [txt('label', 'Label'), url('href', 'Link (leave blank if it has a dropdown)'), area('children', 'Dropdown links — one per line as: Label | /href')] }, txt('cta', 'CTA button (optional)'), url('ctaHref', 'CTA link')] },
+  { type: 'sidebar_menu', label: 'Sidebar Menu', category: 'Layout', icon: 'PanelLeft', kind: 'sidebar_menu',
+    defaults: { heading: 'Documentation', items: [
+      { section: 'Getting started', label: 'Introduction', href: '#' }, { section: 'Getting started', label: 'Installation', href: '#' },
+      { section: 'Guides', label: 'Configuration', href: '#' }, { section: 'Guides', label: 'Deployment', href: '#' }] },
+    fields: [txt('heading', 'Heading (optional)'), { key: 'items', label: 'Links', type: 'items', itemFields: [txt('section', 'Section (optional group heading)'), txt('label', 'Label'), url('href', 'Link')] }] },
   { type: 'accordion', label: 'Accordion', category: 'Content', icon: 'ChevronDown', kind: 'accordion',
     defaults: { heading: '', items: [{ title: 'Section one', text: 'Hidden content that expands in place.' }, { title: 'Section two', text: 'Great for compressing long content.' }] },
     fields: [txt('heading', 'Heading (optional)'), { key: 'items', label: 'Sections', type: 'items', itemFields: [txt('title', 'Title'), area('text', 'Content')] }] },
