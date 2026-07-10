@@ -218,7 +218,7 @@ export default function PageForm({ initial }: Props) {
             <p className="mb-3 text-xs text-slate-400">Sets the color palette for this page.</p>
             <div className="grid grid-cols-4 gap-2">
               {THEME_NAMES.map((name) => {
-                const t = THEMES[name]
+                const t = THEMES[name] || { from: '#4f46e5', to: '#d946ef' }  // 'brand' has no preset; use default swatch
                 const active = theme === name
                 return (
                   <button
