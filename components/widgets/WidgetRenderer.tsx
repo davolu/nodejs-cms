@@ -4,8 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import {
   ArrowRight, Check, Info, CircleCheck, TriangleAlert, CircleAlert, Sparkle, ChevronDown, ChevronLeft, ChevronRight,
-  Twitter, Facebook, Instagram, Linkedin, Youtube, Github, UserRound, LogOut, Blocks, Loader2, MessageCircle, CalendarClock,
-} from 'lucide-react'
+  Twitter, Facebook, Instagram, Linkedin, Youtube, Github, UserRound, LogOut, Blocks, Loader2, MessageCircle, CalendarClock, Menu } from 'lucide-react'
 import type { Block } from '@/lib/blocks'
 import Reveal from '@/components/site/Reveal'
 import { widgetDef } from '@/lib/widgets'
@@ -260,6 +259,10 @@ export default function WidgetRenderer({ block }: { block: Block }) {
       return <Badges p={p} />
     case 'megamenu':
       return <MegaMenu p={p} />
+    case 'navbar':
+      return <Navbar p={p} />
+    case 'slider':
+      return <Slider p={p} />
     case 'sidebar_menu':
       return <SidebarMenu p={p} />
     case 'accordion':
@@ -865,6 +868,93 @@ function parseLinks(text?: string): { label: string; href: string }[] {
   return String(text || '').split('\n').map((l) => l.trim()).filter(Boolean).map((l) => {
     const [label, href] = l.split('|'); return { label: (label || '').trim(), href: (href || '#').trim() }
   })
+}
+
+function Navbar({ p }: { p: any }) {
+  const items = p.items || []
+  const v = p.variant || 'simple'
+  const [openM, setOpenM] = useState(false)
+  const brand = <span className="site-heading text-lg font-bold text-slate-900">{p.brand || 'Brand'}</span>
+  const Links = ({ className = '' }: { className?: string }) => (
+    <div className={`items-center gap-1 ${className}`}>
+      {items.map((it: any, i: number) => <a key={i} href={it.href || '#'} className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900">{it.label}</a>)}
+    </div>
+  )
+  const cta = p.cta && <a href={p.ctaHref || '#'} className="rounded-full px-4 py-2 text-sm font-semibold text-white" style={grad}>{p.cta}</a>
+
+  const inner = () => {
+    if (v === 'centered') return (
+      <div className="flex flex-col items-center gap-2 py-3">
+        {brand}<div className="hidden md:block"><Links className="flex" /></div>
+      </div>
+    )
+    if (v === 'split') return (
+      <div className="flex items-center py-3">
+        <div className="hidden flex-1 md:block"><Links className="flex" /></div>
+        <div className="flex-1 text-center">{brand}</div>
+        <div className="flex flex-1 justify-end">{cta}</div>
+      </div>
+    )
+    if (v === 'pill') return (
+      <div className="flex items-center justify-between rounded-full border border-slate-200 bg-white/80 px-4 py-2 shadow-sm backdrop-blur">
+        {brand}<div className="hidden md:block"><Links className="flex" /></div>{cta}
+      </div>
+    )
+    // simple / minimal
+    return (
+      <div className="flex items-center justify-between py-3">
+        {brand}
+        <div className="flex items-center gap-2">
+          <div className="hidden md:block"><Links className="flex" /></div>
+          {v !== 'minimal' && cta}
+          <button onClick={() => setOpenM((o) => !o)} className="md:hidden text-slate-600" aria-label="Menu"><Menu className="h-5 w-5" /></button>
+        </div>
+      </div>
+    )
+  }
+  return (
+    <nav className={`${v === 'pill' ? 'px-6 py-3' : 'border-b border-slate-200 bg-white/90 px-6 backdrop-blur'}`}>
+      <div className="mx-auto max-w-6xl">{inner()}</div>
+      {openM && <div className="mx-auto max-w-6xl border-t border-slate-100 py-2 md:hidden"><Links className="flex flex-col !items-start" /></div>}
+    </nav>
+  )
+}
+
+function Slider({ p }: { p: any }) {
+  const items = p.items || []
+  const [i, setI] = useState(0)
+  const n = items.length
+  const go = (d: number) => setI((x) => (x + d + n) % n)
+  useEffect(() => {
+    if (!p.autoplay || n < 2) return
+    const t = setInterval(() => setI((x) => (x + 1) % n), Math.max(2, Number(p.interval) || 5) * 1000)
+    return () => clearInterval(t)
+  }, [p.autoplay, p.interval, n])
+  if (!n) return <div className="px-6 py-10 text-center text-sm text-slate-400">Add slides in the widget settings.</div>
+  const h = p.height === 'sm' ? 'h-[320px]' : p.height === 'lg' ? 'h-[620px]' : 'h-[460px]'
+  return (
+    <section className="relative overflow-hidden">
+      <div className={`relative ${h}`}>
+        {items.map((s: any, idx: number) => (
+          <div key={idx} className={`absolute inset-0 transition-opacity duration-700 ${idx === i ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
+            style={{ backgroundImage: `linear-gradient(rgba(15,23,42,.5),rgba(15,23,42,.5)), url(${s.image || `https://picsum.photos/seed/slide${idx}/1600/900`})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+            <div className="mx-auto flex h-full max-w-4xl flex-col items-center justify-center px-6 text-center text-white">
+              {s.heading && <h2 className="site-heading text-4xl font-bold sm:text-6xl">{s.heading}</h2>}
+              {s.text && <p className="mt-4 max-w-2xl text-lg text-white/85">{s.text}</p>}
+              {s.label && <a href={s.href || '#'} className="mt-7 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-slate-900 shadow-lg">{s.label} <ArrowRight className="h-4 w-4" /></a>}
+            </div>
+          </div>
+        ))}
+      </div>
+      {n > 1 && <>
+        <button onClick={() => go(-1)} aria-label="Previous" className="absolute left-4 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-white/80 text-slate-800 shadow hover:bg-white">‹</button>
+        <button onClick={() => go(1)} aria-label="Next" className="absolute right-4 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-white/80 text-slate-800 shadow hover:bg-white">›</button>
+        <div className="absolute inset-x-0 bottom-4 flex justify-center gap-2">
+          {items.map((_: any, d: number) => <button key={d} onClick={() => setI(d)} aria-label={`Slide ${d + 1}`} className={`h-2 rounded-full transition-all ${d === i ? 'w-6 bg-white' : 'w-2 bg-white/50'}`} />)}
+        </div>
+      </>}
+    </section>
+  )
 }
 
 function MegaMenu({ p }: { p: any }) {

@@ -94,6 +94,15 @@ export const WIDGETS: WidgetDef[] = [
       { label: 'Solutions', children: 'For startups | /startups\nFor teams | /teams\nEnterprise | /enterprise' },
       { label: 'Pricing', href: '/pricing' }, { label: 'Blog', href: '/blog' }] },
     fields: [txt('brand', 'Brand text'), { key: 'items', label: 'Menu items', type: 'items', itemFields: [txt('label', 'Label'), url('href', 'Link (leave blank if it has a dropdown)'), area('children', 'Dropdown links — one per line as: Label | /href')] }, txt('cta', 'CTA button (optional)'), url('ctaHref', 'CTA link')] },
+  { type: 'navbar', label: 'Nav Bar', category: 'Layout', icon: 'Menu', kind: 'navbar',
+    defaults: { brand: 'Brand', variant: 'simple', cta: 'Get started', ctaHref: '#', items: [{ label: 'Home', href: '/' }, { label: 'Features', href: '#' }, { label: 'Pricing', href: '#' }, { label: 'Contact', href: '#' }] },
+    fields: [txt('brand', 'Brand text'), { key: 'variant', label: 'Style', type: 'select', options: ['simple', 'centered', 'split', 'minimal', 'pill'] }, { key: 'items', label: 'Links', type: 'items', itemFields: [txt('label', 'Label'), url('href', 'Link')] }, txt('cta', 'CTA button (optional)'), url('ctaHref', 'CTA link')] },
+  { type: 'slider', label: 'Slider', category: 'Media', icon: 'GalleryHorizontal', kind: 'slider',
+    defaults: { autoplay: true, interval: '5', height: 'md', items: [
+      { image: '', heading: 'Slide one', text: 'A bold headline for your first slide.', label: 'Learn more', href: '#' },
+      { image: '', heading: 'Slide two', text: 'Highlight another message here.', label: '', href: '#' },
+      { image: '', heading: 'Slide three', text: 'And one more to round it out.', label: '', href: '#' }] },
+    fields: [{ key: 'autoplay', label: 'Autoplay', type: 'toggle' }, { key: 'interval', label: 'Seconds per slide', type: 'number' }, { key: 'height', label: 'Height', type: 'select', options: ['sm', 'md', 'lg'] }, { key: 'items', label: 'Slides', type: 'items', itemFields: [url('image', 'Image URL'), txt('heading', 'Heading'), area('text', 'Text'), txt('label', 'Button (optional)'), url('href', 'Button link')] }] },
   { type: 'sidebar_menu', label: 'Sidebar Menu', category: 'Layout', icon: 'PanelLeft', kind: 'sidebar_menu',
     defaults: { heading: 'Documentation', items: [
       { section: 'Getting started', label: 'Introduction', href: '#' }, { section: 'Getting started', label: 'Installation', href: '#' },

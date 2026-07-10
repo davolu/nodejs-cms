@@ -2,14 +2,14 @@ import {
   LayoutTemplate, Grid3x3, BarChart3, Megaphone, Quote, Heading, Type, Image as ImageIcon, MousePointerClick,
   Minus, MoveVertical, Columns2, List, ListChecks, TriangleAlert, Sparkle, Images, Play, Building2,
   MessageSquareQuote, Tags, Users, ListOrdered, BarChart2, Mail, CircleHelp, Share2,
-  PanelsTopLeft, GalleryHorizontal, Timer, Contrast, Code, FileCode, MapPin, CalendarClock, MessageSquare, UserRound, ShoppingBag, Blocks, Database, CreditCard, LogIn, FilePlus, LayoutGrid, GitCommitHorizontal, Table, ChevronRight, ChevronDown, SquareArrowOutUpRight, PanelLeft,
+  PanelsTopLeft, GalleryHorizontal, Timer, Contrast, Code, FileCode, MapPin, CalendarClock, MessageSquare, UserRound, ShoppingBag, Blocks, Database, CreditCard, LogIn, FilePlus, LayoutGrid, GitCommitHorizontal, Table, ChevronRight, ChevronDown, SquareArrowOutUpRight, PanelLeft, Menu,
   Youtube, Music, Music2, Video, Github, Instagram, Twitter, Coffee, MessageCircle,
 } from 'lucide-react'
 import { WIDGETS } from '@/lib/widgets'
 import { appIconComponent, brandIconComponent } from './AppIcon'
 
 const NAME_ICON: Record<string, any> = {
-  LogIn, FilePlus, LayoutGrid, GitCommitHorizontal, Table, ChevronRight, ChevronDown, SquareArrowOutUpRight, PanelLeft, Columns: Columns2,
+  LogIn, FilePlus, LayoutGrid, GitCommitHorizontal, Table, ChevronRight, ChevronDown, SquareArrowOutUpRight, PanelLeft, Menu, Columns: Columns2,
   LayoutTemplate, Grid3x3, BarChart3, Megaphone, Quote, Heading, Type, ImageIcon, MousePointerClick,
   Minus, MoveVertical, Columns2, List, ListChecks, TriangleAlert, Sparkle, Images, Play, Building2,
   MessageSquareQuote, Tags, Users, ListOrdered, BarChart2, Mail, CircleHelp, Share2,
