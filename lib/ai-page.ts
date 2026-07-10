@@ -27,6 +27,15 @@ export const PAGE_WIDGETS: Record<string, string> = {
 // Extra widgets the SITE builder may also place.
 export const SITE_WIDGETS: Record<string, string> = {
   ...PAGE_WIDGETS,
+  content_split: 'a content section with an image beside text — set "heading", "text", "image", "imageSide"',
+  bento: 'a bento grid of feature cards — set "items":[{title,text}]',
+  timeline: 'a vertical timeline — set "items":[{date,title,text}]',
+  comparison: 'a comparison table (you vs others) — set "colA","colB","items":[{label,a,b}] using ✓/✕',
+  testimonials: 'customer quotes — set "items":[{text,name,role}]',
+  team: 'a team grid — set "items":[{name,role,image}]',
+  steps: 'a how-it-works steps section — set "items":[{title,text}]',
+  logos: 'a logo cloud — set "images":[{url}]',
+  faq: 'a FAQ accordion — set "items":[{q,a}]',
   collection: 'displays entries from a collection — set "collection" to the collection slug',
   collection_form: 'a form that lets logged-in members submit an entry — set "collection" to the slug',
   products: 'a product grid for the shop',

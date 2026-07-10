@@ -248,6 +248,14 @@ export default function WidgetRenderer({ block }: { block: Block }) {
       return <ContentSplit p={p} />
     case 'bento':
       return <Bento p={p} />
+    case 'timeline':
+      return <Timeline p={p} />
+    case 'table':
+      return <DataTable p={p} />
+    case 'comparison':
+      return <Comparison p={p} />
+    case 'breadcrumb':
+      return <Breadcrumb p={p} />
     case 'plans':
       return <PlansWidget p={p} />
     case 'app_youtube':
@@ -762,6 +770,86 @@ function ContentSplit({ p }: { p: any }) {
         </div>
       </div>
     </section>
+  )
+}
+
+function Timeline({ p }: { p: any }) {
+  const items = p.items || []
+  return (
+    <section className="px-6 py-16">
+      <div className="mx-auto max-w-2xl">
+        {p.heading && <h2 className="site-heading mb-10 text-center text-3xl font-bold text-slate-900 sm:text-4xl">{p.heading}</h2>}
+        <ol className="relative border-l-2 border-slate-200">
+          {items.map((it: any, i: number) => (
+            <li key={i} className="mb-8 ml-6">
+              <span className="absolute -left-[9px] grid h-4 w-4 place-items-center rounded-full ring-4 ring-white" style={grad} />
+              {it.date && <div className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--from)' }}>{it.date}</div>}
+              <h3 className="site-heading text-lg font-bold text-slate-900">{it.title}</h3>
+              {it.text && <p className="mt-1 text-sm text-slate-500">{it.text}</p>}
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+  )
+}
+
+function DataTable({ p }: { p: any }) {
+  const rows = String(p.csv || '').trim().split('\n').map((r: string) => r.split(',').map((c) => c.trim()))
+  const [head, ...body] = rows
+  if (!head) return null
+  return (
+    <section className="px-6 py-12">
+      <div className="mx-auto max-w-4xl">
+        {p.heading && <h2 className="site-heading mb-6 text-2xl font-bold text-slate-900">{p.heading}</h2>}
+        <div className="overflow-x-auto rounded-2xl border border-slate-200">
+          <table className="w-full text-left text-sm">
+            <thead><tr className="border-b border-slate-200 bg-slate-50">{head.map((h, i) => <th key={i} className="px-4 py-3 font-semibold text-slate-700">{h}</th>)}</tr></thead>
+            <tbody className="divide-y divide-slate-100">{body.map((r, i) => (<tr key={i} className="hover:bg-slate-50">{r.map((c, j) => <td key={j} className="px-4 py-3 text-slate-600">{c}</td>)}</tr>))}</tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function Comparison({ p }: { p: any }) {
+  const items = p.items || []
+  const mark = (v: string) => (v === '✓' || v === '✔' ? <span className="text-emerald-500">✓</span> : v === '✕' || v === '✗' || v === 'x' ? <span className="text-slate-300">✕</span> : <span className="text-slate-600">{v}</span>)
+  return (
+    <section className="px-6 py-16">
+      <div className="mx-auto max-w-3xl">
+        {p.heading && <h2 className="site-heading mb-8 text-center text-3xl font-bold text-slate-900">{p.heading}</h2>}
+        <div className="overflow-hidden rounded-2xl border border-slate-200">
+          <table className="w-full text-sm">
+            <thead><tr className="border-b border-slate-200">
+              <th className="px-5 py-3.5 text-left font-medium text-slate-400"></th>
+              <th className="px-5 py-3.5 text-center font-bold text-white" style={grad}>{p.colA || 'Us'}</th>
+              <th className="px-5 py-3.5 text-center font-semibold text-slate-500">{p.colB || 'Others'}</th>
+            </tr></thead>
+            <tbody className="divide-y divide-slate-100">{items.map((it: any, i: number) => (
+              <tr key={i}><td className="px-5 py-3.5 font-medium text-slate-700">{it.label}</td><td className="px-5 py-3.5 text-center text-lg">{mark(it.a)}</td><td className="px-5 py-3.5 text-center text-lg">{mark(it.b)}</td></tr>
+            ))}</tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function Breadcrumb({ p }: { p: any }) {
+  const items = p.items || []
+  return (
+    <nav className="mx-auto max-w-5xl px-6 py-4">
+      <ol className="flex flex-wrap items-center gap-1.5 text-sm text-slate-500">
+        {items.map((it: any, i: number) => (
+          <li key={i} className="flex items-center gap-1.5">
+            {it.href && i < items.length - 1 ? <a href={it.href} className="hover:text-slate-800" style={{ color: i === 0 ? 'var(--from)' : undefined }}>{it.label}</a> : <span className={i === items.length - 1 ? 'font-medium text-slate-800' : ''}>{it.label}</span>}
+            {i < items.length - 1 && <span className="text-slate-300">/</span>}
+          </li>
+        ))}
+      </ol>
+    </nav>
   )
 }
 

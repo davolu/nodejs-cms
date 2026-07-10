@@ -368,62 +368,122 @@ function BlockView({ block: b }: { block: Block }) {
       )
     }
 
-    case 'features':
-      return (
+    case 'features': {
+      const items = b.features || []
+      const fv = b.variant || 'grid'
+      const head = b.heading && <Reveal><h2 className="site-heading mb-10 text-center text-3xl font-bold text-slate-900 sm:text-4xl">{b.heading}</h2></Reveal>
+      const sec = (inner: React.ReactNode) => (
         <section className={b.bg === 'tint' ? 'mt-16 py-16' : 'pt-16'} style={b.bg === 'tint' ? tint : undefined}>
-          <div className="mx-auto max-w-5xl px-6">
-            {b.heading && (
-              <Reveal><h2 className="site-heading mb-10 text-center text-3xl font-bold text-slate-900 sm:text-4xl">{b.heading}</h2></Reveal>
-            )}
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {(b.features || []).map((f, i) => (
-                <Reveal key={i} delay={i * 80}>
-                  <div className="h-full rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
-                    <span className="grid h-10 w-10 place-items-center rounded-xl text-white" style={gradient}><Check className="h-5 w-5" /></span>
-                    <h3 className="site-heading mt-4 text-lg font-bold text-slate-900">{f.title}</h3>
-                    <p className="mt-1.5 text-sm leading-relaxed text-slate-500">{f.text}</p>
-                  </div>
-                </Reveal>
-              ))}
-            </div>
-          </div>
+          <div className="mx-auto max-w-5xl px-6">{head}{inner}</div>
         </section>
       )
-
-    case 'stats':
-      return (
-        <section className={b.bg === 'tint' ? 'mt-16 py-14' : 'pt-16'} style={b.bg === 'tint' ? tint : undefined}>
-          <div className="mx-auto grid max-w-4xl grid-cols-1 gap-8 px-6 sm:grid-cols-3">
-            {(b.stats || []).map((s, i) => (
-              <Reveal key={i} delay={i * 80} className="text-center">
-                <div className="site-heading text-4xl font-bold sm:text-5xl" style={{ color: 'var(--solid)' }}>{s.value}</div>
-                <div className="mt-1 text-sm font-medium text-slate-500">{s.label}</div>
-              </Reveal>
-            ))}
-          </div>
-        </section>
+      if (fv === 'alt') return sec(
+        <div className="space-y-6">{items.map((f, i) => (
+          <Reveal key={i} delay={i * 60}><div className={`flex flex-col gap-4 rounded-2xl border border-slate-100 p-6 sm:flex-row sm:items-center ${i % 2 ? 'sm:flex-row-reverse' : ''}`} style={tint}>
+            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl text-white" style={gradient}><Check className="h-6 w-6" /></span>
+            <div><h3 className="site-heading text-xl font-bold text-slate-900">{f.title}</h3><p className="mt-1 text-slate-600">{f.text}</p></div>
+          </div></Reveal>
+        ))}</div>
       )
-
-    case 'cta':
-      return (
-        <section className="mx-auto mt-16 max-w-5xl px-6">
-          <Reveal>
-            <div
-              className="relative overflow-hidden rounded-3xl px-8 py-14 text-center sm:px-12"
-              style={b.variant === 'dark' ? { backgroundColor: '#0b1120' } : gradient}
-            >
-              <h2 className="site-heading text-3xl font-bold text-white sm:text-4xl">{b.heading}</h2>
-              {b.label && (
-                <div className="mt-7">
-                  <Link href={b.href || '#'} className="group inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-slate-900 shadow-lg transition-transform hover:-translate-y-0.5">
-                    {b.label} <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                  </Link>
-                </div>
-              )}
+      if (fv === 'iconleft') return sec(
+        <div className="grid gap-8 sm:grid-cols-2">{items.map((f, i) => (
+          <Reveal key={i} delay={i * 60}><div className="flex gap-4">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-white" style={gradient}><Check className="h-5 w-5" /></span>
+            <div><h3 className="site-heading text-lg font-bold text-slate-900">{f.title}</h3><p className="mt-1 text-sm text-slate-500">{f.text}</p></div>
+          </div></Reveal>
+        ))}</div>
+      )
+      if (fv === 'numbered') return sec(
+        <div className="grid gap-8 sm:grid-cols-3">{items.map((f, i) => (
+          <Reveal key={i} delay={i * 60}><div>
+            <div className="bg-clip-text text-5xl font-extrabold text-transparent" style={gradient}>{String(i + 1).padStart(2, '0')}</div>
+            <h3 className="site-heading mt-3 text-lg font-bold text-slate-900">{f.title}</h3><p className="mt-1 text-sm text-slate-500">{f.text}</p>
+          </div></Reveal>
+        ))}</div>
+      )
+      if (fv === 'bordered') return sec(
+        <div className="grid divide-slate-200 overflow-hidden rounded-2xl border border-slate-200 sm:grid-cols-3 sm:divide-x">{items.map((f, i) => (
+          <div key={i} className="p-6"><span className="grid h-10 w-10 place-items-center rounded-xl text-white" style={gradient}><Check className="h-5 w-5" /></span><h3 className="site-heading mt-4 text-lg font-bold text-slate-900">{f.title}</h3><p className="mt-1.5 text-sm text-slate-500">{f.text}</p></div>
+        ))}</div>
+      )
+      const cards = fv === 'cards'
+      return sec(
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{items.map((f, i) => (
+          <Reveal key={i} delay={i * 80}>
+            <div className={`h-full rounded-2xl border border-slate-100 bg-white p-6 ${cards ? 'shadow-lg transition hover:-translate-y-1 hover:shadow-xl' : 'shadow-sm'}`}>
+              <span className="grid h-10 w-10 place-items-center rounded-xl text-white" style={gradient}><Check className="h-5 w-5" /></span>
+              <h3 className="site-heading mt-4 text-lg font-bold text-slate-900">{f.title}</h3>
+              <p className="mt-1.5 text-sm leading-relaxed text-slate-500">{f.text}</p>
             </div>
           </Reveal>
+        ))}</div>
+      )
+    }
+
+    case 'stats': {
+      const items = b.stats || []
+      const sv = b.variant || 'plain'
+      const outer = (inner: React.ReactNode) => (
+        <section className={b.bg === 'tint' ? 'mt-16 py-14' : 'pt-16'} style={b.bg === 'tint' ? tint : undefined}>
+          <div className="mx-auto max-w-5xl px-6">{inner}</div>
         </section>
       )
+      if (sv === 'cards') return outer(
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">{items.map((s, i) => (
+          <Reveal key={i} delay={i * 80} className="rounded-2xl border border-slate-100 bg-white p-6 text-center shadow-sm">
+            <div className="site-heading text-4xl font-bold" style={{ color: 'var(--solid)' }}>{s.value}</div><div className="mt-1 text-sm font-medium text-slate-500">{s.label}</div>
+          </Reveal>
+        ))}</div>
+      )
+      if (sv === 'bordered') return outer(
+        <div className="grid grid-cols-1 divide-y divide-slate-200 rounded-2xl border border-slate-200 sm:grid-cols-3 sm:divide-x sm:divide-y-0">{items.map((s, i) => (
+          <div key={i} className="p-8 text-center"><div className="site-heading text-4xl font-bold text-slate-900">{s.value}</div><div className="mt-1 text-sm font-medium text-slate-500">{s.label}</div></div>
+        ))}</div>
+      )
+      if (sv === 'gradient') return outer(
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">{items.map((s, i) => (
+          <Reveal key={i} delay={i * 80} className="text-center"><div className="bg-clip-text text-5xl font-extrabold text-transparent sm:text-6xl" style={gradient}>{s.value}</div><div className="mt-1 text-sm font-medium text-slate-500">{s.label}</div></Reveal>
+        ))}</div>
+      )
+      return outer(
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">{items.map((s, i) => (
+          <Reveal key={i} delay={i * 80} className="text-center"><div className="site-heading text-4xl font-bold sm:text-5xl" style={{ color: 'var(--solid)' }}>{s.value}</div><div className="mt-1 text-sm font-medium text-slate-500">{s.label}</div></Reveal>
+        ))}</div>
+      )
+    }
+
+    case 'cta': {
+      const cv = b.variant || 'brand'
+      const btn = b.label && <Link href={b.href || '#'} className="group inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-slate-900 shadow-lg transition-transform hover:-translate-y-0.5">{b.label} <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" /></Link>
+      const gbtn = b.label && <Link href={b.href || '#'} className="group inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white shadow-lg" style={gradient}>{b.label} <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" /></Link>
+      if (cv === 'split') return (
+        <section className="mx-auto mt-16 max-w-5xl px-6"><Reveal><div className="flex flex-col items-center justify-between gap-6 rounded-3xl px-8 py-10 sm:flex-row sm:text-left" style={gradient}>
+          <h2 className="site-heading text-2xl font-bold text-white sm:text-3xl">{b.heading}</h2><div className="shrink-0">{btn}</div>
+        </div></Reveal></section>
+      )
+      if (cv === 'card') return (
+        <section className="mx-auto mt-16 max-w-3xl px-6"><Reveal><div className="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-xl">
+          <div className="mx-auto mb-5 h-1.5 w-16 rounded-full" style={gradient} />
+          <h2 className="site-heading text-3xl font-bold text-slate-900">{b.heading}</h2><div className="mt-7">{gbtn}</div>
+        </div></Reveal></section>
+      )
+      if (cv === 'minimal') return (
+        <section className="mx-auto mt-16 max-w-2xl px-6 text-center"><Reveal><h2 className="site-heading text-3xl font-bold text-slate-900 sm:text-4xl">{b.heading}</h2><div className="mt-7">{gbtn}</div></Reveal></section>
+      )
+      if (cv === 'bordered') return (
+        <section className="mx-auto mt-16 max-w-4xl px-6"><Reveal><div className="rounded-3xl border-2 border-slate-900 px-8 py-12 text-center">
+          <h2 className="site-heading text-3xl font-bold text-slate-900 sm:text-4xl">{b.heading}</h2><div className="mt-7">{gbtn}</div>
+        </div></Reveal></section>
+      )
+      return (
+        <section className="mx-auto mt-16 max-w-5xl px-6"><Reveal>
+          <div className="relative overflow-hidden rounded-3xl px-8 py-14 text-center sm:px-12" style={cv === 'dark' ? { backgroundColor: '#0b1120' } : gradient}>
+            <h2 className="site-heading text-3xl font-bold text-white sm:text-4xl">{b.heading}</h2>
+            {b.label && <div className="mt-7">{btn}</div>}
+          </div>
+        </Reveal></section>
+      )
+    }
 
     default:
       if (isWidget(b.type)) return <WidgetRenderer block={b} />

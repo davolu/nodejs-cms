@@ -73,6 +73,18 @@ export const WIDGETS: WidgetDef[] = [
   { type: 'bento', label: 'Bento Grid', category: 'Layout', icon: 'LayoutGrid', kind: 'bento',
     defaults: { heading: '', items: [{ title: 'Fast', text: 'Blazing performance out of the box.' }, { title: 'Secure', text: 'Best-practice security by default.' }, { title: 'Flexible', text: 'Adapt it to any workflow.' }, { title: 'Loved', text: 'Trusted by teams everywhere.' }] },
     fields: [txt('heading', 'Heading (optional)'), { key: 'items', label: 'Cards', type: 'items', itemFields: [txt('title', 'Title'), area('text', 'Text')] }] },
+  { type: 'timeline', label: 'Timeline', category: 'Content', icon: 'GitCommitHorizontal', kind: 'timeline',
+    defaults: { heading: 'Our journey', items: [{ date: '2021', title: 'Founded', text: 'The idea took shape.' }, { date: '2023', title: 'Launched', text: 'Shipped to the first customers.' }, { date: '2025', title: 'Scaled', text: 'Grew to teams worldwide.' }] },
+    fields: [txt('heading', 'Heading (optional)'), { key: 'items', label: 'Events', type: 'items', itemFields: [txt('date', 'Date/Label'), txt('title', 'Title'), area('text', 'Text')] }] },
+  { type: 'table', label: 'Table', category: 'Content', icon: 'Table', kind: 'table',
+    defaults: { heading: '', csv: 'Plan, Price, Seats\nStarter, $9, 1\nTeam, $29, 5\nBusiness, $99, Unlimited' },
+    fields: [txt('heading', 'Heading (optional)'), area('csv', 'Rows (CSV — first row is the header)')] },
+  { type: 'comparison', label: 'Comparison', category: 'Marketing', icon: 'Columns', kind: 'comparison',
+    defaults: { heading: 'Why choose us', colA: 'Us', colB: 'Others', items: [{ label: 'Own your data', a: '✓', b: '✕' }, { label: 'One-click deploy', a: '✓', b: '✕' }, { label: 'No lock-in', a: '✓', b: '✕' }] },
+    fields: [txt('heading', 'Heading (optional)'), txt('colA', 'Column A label'), txt('colB', 'Column B label'), { key: 'items', label: 'Rows', type: 'items', itemFields: [txt('label', 'Feature'), txt('a', 'Column A'), txt('b', 'Column B')] }] },
+  { type: 'breadcrumb', label: 'Breadcrumb', category: 'Layout', icon: 'ChevronRight', kind: 'breadcrumb',
+    defaults: { items: [{ label: 'Home', href: '/' }, { label: 'Docs', href: '/docs' }, { label: 'Getting started', href: '' }] },
+    fields: [{ key: 'items', label: 'Trail', type: 'items', itemFields: [txt('label', 'Label'), url('href', 'Link (optional)')] }] },
 
   // ── Media ──
   { type: 'gallery', label: 'Gallery', category: 'Media', icon: 'Images', kind: 'gallery',

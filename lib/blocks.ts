@@ -92,7 +92,9 @@ export const VARIANTS: Partial<Record<BlockType, string[]>> = {
   image: ['rounded', 'full', 'framed'],
   button: ['gradient', 'solid', 'outline'],
   quote: ['card', 'plain'],
-  cta: ['brand', 'dark'],
+  cta: ['brand', 'dark', 'card', 'split', 'minimal', 'bordered'],
+  features: ['grid', 'cards', 'alt', 'iconleft', 'bordered', 'numbered'],
+  stats: ['plain', 'cards', 'bordered', 'gradient'],
 }
 export function variantsFor(type: BlockType): string[] {
   return VARIANTS[type] || []
