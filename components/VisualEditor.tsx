@@ -321,22 +321,41 @@ function EditableBlock({ block: b, onUpdate }: { block: Block; onUpdate: (id: st
 
   switch (b.type) {
     case 'hero': {
-      const light = b.variant === 'light'
+      const V = b.variant || 'gradient'
+      const lightV = ['light', 'minimal', 'centered', 'bordered', 'newsletter', 'screenshot', 'stats', 'mesh', 'bigtype', 'left'].includes(V)
+      const darkV = ['dark', 'spotlight'].includes(V)
+      const imageV = V === 'image' || V === 'split'
+      const alignLeft = b.align === 'left' || V === 'left'
+      const wrapStyle: React.CSSProperties = imageV
+        ? { backgroundImage: `linear-gradient(rgba(15,23,42,.55),rgba(15,23,42,.55)), url(${b.url || `https://picsum.photos/seed/${b.id}/1400/800`})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+        : lightV ? (tintBg as React.CSSProperties) : darkV ? { backgroundColor: '#0b1120' } : (grad as React.CSSProperties)
+      const onLight = lightV
+      const blobs = !lightV && !imageV && !darkV
       return (
-        <section className="relative overflow-hidden px-6 py-16 text-center" style={light ? tintBg : { backgroundColor: '#0b1120' }}>
-          {!light && (
-            <div aria-hidden className="pointer-events-none absolute inset-0">
-              <div className="absolute -left-16 top-0 h-64 w-64 rounded-full opacity-50 blur-3xl" style={{ backgroundColor: 'var(--from)' }} />
-              <div className="absolute right-0 top-8 h-64 w-64 rounded-full opacity-40 blur-3xl" style={{ backgroundColor: 'var(--to)' }} />
+        <section className={`relative overflow-hidden px-6 py-16 ${alignLeft ? 'text-left' : 'text-center'}`} style={wrapStyle}>
+          {blobs && (
+            <div aria-hidden className="pointer-events-none absolute inset-0 opacity-60">
+              <div className="absolute -left-16 top-0 h-64 w-64 rounded-full blur-3xl" style={{ backgroundColor: 'var(--to)', opacity: 0.5 }} />
+              <div className="absolute right-0 top-8 h-64 w-64 rounded-full blur-3xl" style={{ backgroundColor: 'var(--from)', opacity: 0.4 }} />
             </div>
           )}
-          <div className="relative mx-auto max-w-2xl">
-            <AutoText value={b.heading || ''} onChange={(v) => set({ heading: v })} placeholder="Hero heading" className={`site-heading text-center text-3xl font-bold leading-tight sm:text-5xl ${light ? 'text-slate-900 placeholder:text-slate-300' : 'text-white placeholder:text-white/40'}`} />
-            <AutoText value={b.subheading || ''} onChange={(v) => set({ subheading: v })} placeholder="Supporting subheading" className={`mt-4 text-center text-lg ${light ? 'text-slate-600 placeholder:text-slate-400' : 'text-slate-300 placeholder:text-slate-500'}`} />
-            <span className="mt-6 inline-flex rounded-full px-5 py-2 text-sm font-semibold text-white" style={grad}>
-              <Line value={b.label || ''} onChange={(v) => set({ label: v })} placeholder="Button label" className="text-center text-white placeholder:text-white/60" />
-            </span>
+          {V === 'bordered' && <div className="pointer-events-none absolute inset-4 rounded-3xl border-2 border-slate-900/80" />}
+          <div className={`relative ${alignLeft ? 'mx-0 max-w-3xl' : 'mx-auto max-w-2xl'}`}>
+            {V === 'centered' && <span className={`mb-4 inline-block rounded-full px-3 py-1 text-xs font-medium ${onLight ? 'bg-white text-slate-600 shadow-sm' : 'bg-white/15 text-white'}`}>✦ Badge</span>}
+            <AutoText value={b.heading || ''} onChange={(v) => set({ heading: v })} placeholder="Hero heading" className={`site-heading ${alignLeft ? 'text-left' : 'text-center'} font-bold leading-tight ${V === 'bigtype' ? 'text-5xl sm:text-7xl' : 'text-3xl sm:text-5xl'} ${onLight ? 'text-slate-900 placeholder:text-slate-300' : 'text-white placeholder:text-white/40'}`} />
+            <AutoText value={b.subheading || ''} onChange={(v) => set({ subheading: v })} placeholder="Supporting subheading" className={`mt-4 ${alignLeft ? 'text-left' : 'text-center'} text-lg ${onLight ? 'text-slate-600 placeholder:text-slate-400' : 'text-slate-300 placeholder:text-slate-500'}`} />
+            {V === 'newsletter' ? (
+              <div className={`mt-6 flex max-w-md gap-2 ${alignLeft ? '' : 'mx-auto'}`}>
+                <span className="flex-1 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-400">you@example.com</span>
+                <span className="rounded-full px-5 py-2 text-sm font-semibold text-white" style={grad}><Line value={b.label || ''} onChange={(v) => set({ label: v })} placeholder="Subscribe" className="text-center text-white placeholder:text-white/60" /></span>
+              </div>
+            ) : (
+              <span className={`mt-6 inline-flex rounded-full px-5 py-2 text-sm font-semibold ${onLight || V === 'glass' || V === 'angled' || V === 'waves' ? 'bg-white text-slate-900 shadow' : 'text-white'}`} style={onLight || ['glass', 'angled', 'waves'].includes(V) ? undefined : grad}>
+                <Line value={b.label || ''} onChange={(v) => set({ label: v })} placeholder="Button label" className={`text-center ${onLight || ['glass', 'angled', 'waves'].includes(V) ? 'text-slate-900 placeholder:text-slate-400' : 'text-white placeholder:text-white/60'}`} />
+              </span>
+            )}
           </div>
+          {V === 'waves' && <svg className="absolute inset-x-0 bottom-0 w-full" viewBox="0 0 1440 120" preserveAspectRatio="none" style={{ height: 40 }}><path fill="var(--brand-bg, #fff)" d="M0,64L80,58C160,53,320,43,480,48C640,53,800,75,960,80C1120,85,1280,75,1360,64L1440,58L1440,120L0,120Z" /></svg>}
         </section>
       )
     }
@@ -407,17 +426,22 @@ function EditableBlock({ block: b, onUpdate }: { block: Block; onUpdate: (id: st
           </div>
         </section>
       )
-    case 'cta':
+    case 'cta': {
+      const cv = b.variant || 'brand'
+      const lightCta = ['card', 'minimal', 'bordered'].includes(cv)
+      const wrap: React.CSSProperties = cv === 'dark' ? { backgroundColor: '#0b1120' } : lightCta ? { backgroundColor: '#fff' } : (grad as React.CSSProperties)
       return (
         <div className="px-6 py-8">
-          <div className="mx-auto max-w-5xl overflow-hidden rounded-3xl px-8 py-12 text-center" style={b.variant === 'dark' ? { backgroundColor: '#0b1120' } : grad}>
-            <AutoText value={b.heading || ''} onChange={(v) => set({ heading: v })} placeholder="Call-to-action heading" className="site-heading text-center text-2xl font-bold text-white placeholder:text-white/50 sm:text-3xl" />
-            <span className="mt-5 inline-flex rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-slate-900">
-              <Line value={b.label || ''} onChange={(v) => set({ label: v })} placeholder="Button label" className="text-center text-slate-900 placeholder:text-slate-400" />
+          <div className={`mx-auto max-w-5xl overflow-hidden rounded-3xl px-8 py-12 text-center ${cv === 'card' ? 'border border-slate-200 shadow-xl' : cv === 'bordered' ? 'border-2 border-slate-900' : ''}`} style={wrap}>
+            {cv === 'card' && <div className="mx-auto mb-4 h-1.5 w-16 rounded-full" style={grad} />}
+            <AutoText value={b.heading || ''} onChange={(v) => set({ heading: v })} placeholder="Call-to-action heading" className={`site-heading text-center text-2xl font-bold sm:text-3xl ${lightCta ? 'text-slate-900 placeholder:text-slate-300' : 'text-white placeholder:text-white/50'}`} />
+            <span className={`mt-5 inline-flex rounded-full px-6 py-2.5 text-sm font-semibold ${lightCta ? 'text-white' : 'bg-white text-slate-900'}`} style={lightCta ? (grad as React.CSSProperties) : undefined}>
+              <Line value={b.label || ''} onChange={(v) => set({ label: v })} placeholder="Button label" className={`text-center ${lightCta ? 'text-white placeholder:text-white/60' : 'text-slate-900 placeholder:text-slate-400'}`} />
             </span>
           </div>
         </div>
       )
+    }
     default:
       if (isWidget(b.type)) return <div className="[&_a]:pointer-events-none [&_button]:pointer-events-none [&_iframe]:pointer-events-none [&_input]:pointer-events-none [&_select]:pointer-events-none"><WidgetRenderer key={JSON.stringify(b.props || {})} block={b} /></div>
       return null
