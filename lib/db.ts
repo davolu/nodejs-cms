@@ -31,6 +31,11 @@ async function initOnce(): Promise<void> {
   const pool = getPool()
   await pool.query(SCHEMA_SQL)
 
+  // Seed exactly once, ever. Once the '_seeded' marker exists we never seed again —
+  // so deleting demo pages/collections (even all of them) can't resurrect them.
+  const seeded = await pool.query("SELECT 1 FROM settings WHERE key = '_seeded' LIMIT 1")
+  if (seeded.rows.length > 0) return
+
   const { rows } = await pool.query('SELECT COUNT(*)::int AS c FROM pages')
   if (rows[0].c === 0) {
     for (const p of seedPages) {
@@ -94,6 +99,8 @@ async function initOnce(): Promise<void> {
       )
     }
   }
+  // Mark as seeded so we never seed again (even if the user later empties a table).
+  await pool.query("INSERT INTO settings (key,value,updated_at) VALUES ('_seeded','1',$1) ON CONFLICT (key) DO NOTHING", [new Date().toISOString()])
 }
 
 export function ensureReady(): Promise<void> {

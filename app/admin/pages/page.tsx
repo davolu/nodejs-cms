@@ -32,9 +32,9 @@ export default function PagesListPage() {
 
   async function remove(id: string) {
     if (!confirm('Delete this page? This cannot be undone.')) return
-    await fetch(`/api/pages/${id}`, { method: 'DELETE' })
-    setPages((p) => p.filter((x) => x.id !== id))
-    setSelected((s) => { const n = new Set(s); n.delete(id); return n })
+    const res = await fetch(`/api/pages/${id}`, { method: 'DELETE' })
+    if (!res.ok) { alert('Could not delete this page. If you are in demo mode, changes will not persist — add a DATABASE_URL.'); return }
+    await load()
   }
 
   async function bulkDelete() {
@@ -42,8 +42,8 @@ export default function PagesListPage() {
     if (!ids.length || !confirm(`Delete ${ids.length} page${ids.length === 1 ? '' : 's'}? This cannot be undone.`)) return
     setDeleting(true)
     await Promise.all(ids.map((id) => fetch(`/api/pages/${id}`, { method: 'DELETE' })))
-    setPages((p) => p.filter((x) => !selected.has(x.id)))
-    setSelected(new Set()); setDeleting(false)
+    setDeleting(false)
+    await load()
   }
 
   async function setHome(page: Page) {

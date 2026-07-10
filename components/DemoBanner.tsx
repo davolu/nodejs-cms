@@ -15,7 +15,7 @@ export default function DemoBanner() {
     <div className="flex items-start gap-2 border-b border-amber-200 bg-amber-50 px-5 py-2.5 text-sm text-amber-800">
       <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
       <span>
-        <strong>Demo mode — no database connected.</strong> Changes you publish won&apos;t persist or show on the live site.
+        <strong>Demo mode — no database connected.</strong> Changes you make (including deletes) won&apos;t persist or show on the live site — demo pages reappear on every reload.
         Set a <code className="rounded bg-amber-100 px-1">DATABASE_URL</code> (Vercel Postgres, Neon, or Supabase) to save your work — the schema is created automatically.
       </span>
     </div>
