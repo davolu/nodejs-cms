@@ -14,7 +14,7 @@ import {
   GripVertical, Trash2, Plus, Copy, ChevronUp, ChevronDown, Maximize2, Minimize2,
   Eye, Save, Sliders, Check, X, Search, LayoutTemplate,
 } from 'lucide-react'
-import { Block, BlockType, makeBlock, blockId, labelFor, variantsFor, themeVars, BLOCK_FONTS } from '@/lib/blocks'
+import { Block, BlockType, makeBlock, blockId, labelFor, variantsFor, themeVars, BLOCK_FONTS, blockStyleVars } from '@/lib/blocks'
 import { isWidget } from '@/lib/widgets'
 import WidgetRenderer from '@/components/widgets/WidgetRenderer'
 import WidgetFields from '@/components/widgets/WidgetFields'
@@ -271,7 +271,7 @@ function SortableVisualBlock({
   onRemove: (id: string) => void; onDuplicate: (id: string) => void; onMove: (id: string, dir: -1 | 1) => void
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: block.id })
-  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1, ...blockStyleVars(block.style) }
   const [showSettings, setShowSettings] = useState(false)
   const settingsOpen = showSettings || (selected && isWidget(block.type))
 
@@ -419,7 +419,7 @@ function EditableBlock({ block: b, onUpdate }: { block: Block; onUpdate: (id: st
         </div>
       )
     default:
-      if (isWidget(b.type)) return <div className="[&_a]:pointer-events-none [&_button]:pointer-events-none [&_iframe]:pointer-events-none [&_input]:pointer-events-none">{<WidgetRenderer block={b} />}</div>
+      if (isWidget(b.type)) return <div className="[&_a]:pointer-events-none [&_button]:pointer-events-none [&_iframe]:pointer-events-none [&_input]:pointer-events-none [&_select]:pointer-events-none"><WidgetRenderer key={JSON.stringify(b.props || {})} block={b} /></div>
       return null
   }
 }
